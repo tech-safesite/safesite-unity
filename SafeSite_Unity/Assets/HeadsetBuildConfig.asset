@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1f6c51f4a71f564996d4f7766c010bd, type: 3}
+  m_Name: HeadsetBuildConfig
+  m_EditorClassIdentifier: 
+  reverseDomainPrefix: com.safesite
+  appName: SafeSite
+  productName: SafeSite
+  scenes: []
+  outputRoot: Builds
+  keystoreSearchFolder: C:\Users\suriy\Documents\SafeSite\Github\SafeSite-Unity\safesite-unity\SafeSite_Unity\safesite.keystore
+  headsetKeystore:
+    fileName: safesite.keystore
+    alias: safesite
+  quest:
+    deviceToken: MetaQuest
+    featureSetId: com.unity.openxr.featureset.meta
+    requiredFeatureTypeNames:
+    - UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature
+    - UnityEngine.XR.OpenXR.Features.Interactions.OculusTouchControllerProfile
+    - UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile
+    - UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile
+    - UnityEngine.XR.Hands.OpenXR.HandTracking
+    extraDefines:
+    - VR_OPENXR
+    - VR_META
+    minSdk: 32
+    targetSdk: 34
+    useGameActivity: 1
+    graphicsApis: 150000000b000000
+  pico:
+    deviceToken: Pico
+    featureSetId: com.picoxr.openxr.features
+    requiredFeatureTypeNames:
+    - Unity.XR.OpenXR.Features.PICOSupport.PICOFeature
+    - UnityEngine.XR.OpenXR.Features.Interactions.PICONeo3ControllerProfile
+    - UnityEngine.XR.OpenXR.Features.Interactions.PICO4ControllerProfile
+    - UnityEngine.XR.OpenXR.Features.Interactions.PICO4UltraControllerProfile
+    - UnityEngine.XR.OpenXR.Features.Interactions.PICOG3ControllerProfile
+    - UnityEngine.XR.Hands.OpenXR.HandTracking
+    extraDefines:
+    - VR_OPENXR
+    - VR_PICO
+    minSdk: 29
+    targetSdk: 34
+    useGameActivity: 1
+    graphicsApis: 15000000
