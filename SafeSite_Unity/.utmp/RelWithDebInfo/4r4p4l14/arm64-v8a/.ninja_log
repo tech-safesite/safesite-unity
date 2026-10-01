@@ -1,0 +1,19 @@
+# ninja log v5
+66	4292	8113756271896555	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	9d3b8d7df0cb8db8
+43	4295	8113756271936936	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	b449928bda794a48
+78	4841	8113756277454019	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	2570b032db1b4b7
+33	4350	8113756272309857	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	9cc6c9821de00a0e
+22	4451	8113756273497890	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	ca9a1ed7242f384
+55	4353	8113756272405213	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	a16ae388a2061ae7
+92	4770	8113756276734542	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	56b806df99e44b50
+12	4879	8113756277800303	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	76237f74b2cc8e6e
+4879	5256	8113756281580776	C:/Users/suriy/Documents/SafeSite/Github/SafeSite-Unity/safesite-unity/SafeSite_Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/4r4p4l14/obj/arm64-v8a/libgame.so	62e84e41f770d206
+55	1924	8113782146561918	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	a16ae388a2061ae7
+46	1926	8113782146175633	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	9d3b8d7df0cb8db8
+18	1927	8113782146227921	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	b449928bda794a48
+25	1929	8113782146685264	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	9cc6c9821de00a0e
+36	2032	8113782147362487	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	ca9a1ed7242f384
+65	2183	8113782149313911	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	56b806df99e44b50
+76	2317	8113782150610103	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	2570b032db1b4b7
+10	2357	8113782150869008	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	76237f74b2cc8e6e
+2357	2545	8113782152956547	C:/Users/suriy/Documents/SafeSite/Github/SafeSite-Unity/safesite-unity/SafeSite_Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/4r4p4l14/obj/arm64-v8a/libgame.so	62e84e41f770d206

@@ -8,12 +8,23 @@ namespace SafeSite.Build.Headset
     internal static class HeadsetBuildTypeUtil
     {
         /// <summary>
-        /// Reads the "public const string featureId" every OpenXRFeature declares. There's no public
+        /// Reads the "public const string featureId" an OpenXRFeature declares. There's no public
         /// instance accessor for it (the runtime field is internal), so this is reflection-only.
+        ///
+        /// The casing is not consistent across packages: most features use "featureId", but some -
+        /// OpenXRCompositionLayersFeature among them - declare "FeatureId". Matching only the
+        /// lowercase spelling returned null for those, which made DisableEverythingNotAllowed treat
+        /// them as unaccounted-for and switch them off again immediately after ApplyRequiredFeatures
+        /// had enabled them.
         /// </summary>
         public static string GetFeatureId(Type featureType)
         {
-            var field = featureType.GetField("featureId", BindingFlags.Public | BindingFlags.Static);
+            var field = featureType.GetField("featureId", BindingFlags.Public | BindingFlags.Static)
+                        ?? featureType.GetField("FeatureId", BindingFlags.Public | BindingFlags.Static)
+                        ?? featureType.GetFields(BindingFlags.Public | BindingFlags.Static)
+                            .FirstOrDefault(f => f.FieldType == typeof(string) &&
+                                                 string.Equals(f.Name, "featureId", StringComparison.OrdinalIgnoreCase));
+
             return field?.GetValue(null) as string;
         }
 

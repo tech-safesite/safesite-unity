@@ -17,19 +17,30 @@ MonoBehaviour:
   productName: SafeSite
   scenes: []
   outputRoot: Builds
-  keystoreSearchFolder: C:\Users\suriy\Documents\SafeSite\Github\SafeSite-Unity\safesite-unity\SafeSite_Unity\safesite.keystore
-  headsetKeystore:
-    fileName: safesite.keystore
-    alias: safesite
   quest:
     deviceToken: MetaQuest
-    featureSetId: com.unity.openxr.featureset.meta
+    featureSetIds:
+    - com.unity.openxr.featureset.meta
+    - com.meta.openxr.featureset.metaxr
     requiredFeatureTypeNames:
     - UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature
     - UnityEngine.XR.OpenXR.Features.Interactions.OculusTouchControllerProfile
     - UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile
     - UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile
     - UnityEngine.XR.Hands.OpenXR.HandTracking
+    - UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature
+    disabledFeatureTypeNames:
+    - UnityEngine.XR.OpenXR.Features.Meta.ARSessionFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARCameraFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARPlaneFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARAnchorFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARRaycastFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARMeshFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARBoundingBoxFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.AROcclusionFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ColocationDiscoveryFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.BoundaryVisibilityFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.DisplayUtilitiesFeature
     extraDefines:
     - VR_OPENXR
     - VR_META
@@ -39,7 +50,8 @@ MonoBehaviour:
     graphicsApis: 150000000b000000
   pico:
     deviceToken: Pico
-    featureSetId: com.picoxr.openxr.features
+    featureSetIds:
+    - com.picoxr.openxr.features
     requiredFeatureTypeNames:
     - Unity.XR.OpenXR.Features.PICOSupport.PICOFeature
     - UnityEngine.XR.OpenXR.Features.Interactions.PICONeo3ControllerProfile
@@ -47,6 +59,19 @@ MonoBehaviour:
     - UnityEngine.XR.OpenXR.Features.Interactions.PICO4UltraControllerProfile
     - UnityEngine.XR.OpenXR.Features.Interactions.PICOG3ControllerProfile
     - UnityEngine.XR.Hands.OpenXR.HandTracking
+    - UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature
+    disabledFeatureTypeNames:
+    - UnityEngine.XR.OpenXR.Features.Meta.ARSessionFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARCameraFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARPlaneFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARAnchorFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARRaycastFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARMeshFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ARBoundingBoxFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.AROcclusionFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.ColocationDiscoveryFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.BoundaryVisibilityFeature
+    - UnityEngine.XR.OpenXR.Features.Meta.DisplayUtilitiesFeature
     extraDefines:
     - VR_OPENXR
     - VR_PICO

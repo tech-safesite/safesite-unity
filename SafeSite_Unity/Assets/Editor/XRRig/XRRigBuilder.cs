@@ -15,6 +15,15 @@ namespace SafeSite.Build.XRRig
         private const string HandsRigPrefabName = "XR Origin Hands (XR Rig)";
         private const string ControllerOnlyRigPrefabName = "XR Origin (XR Rig)";
 
+        /// <summary>
+        /// The project-owned copy of the hands rig. It carries the grip-pose Controller Model Anchors
+        /// and the PlatformControllerModel wiring, none of which survives in the Package Manager
+        /// samples - re-importing "Hands Interaction Demo" or "Starter Assets" overwrites those files
+        /// and silently drops the wiring. Prefer this; the sample prefabs are only a fallback for a
+        /// project that has not been set up yet.
+        /// </summary>
+        private const string ProjectRigPrefabPath = "Assets/Prefabs/XR/SafeSite XR Rig.prefab";
+
         public static bool BuildInScene(Scene scene, bool interactive)
         {
             if (!scene.IsValid() || !scene.isLoaded)
@@ -40,7 +49,9 @@ namespace SafeSite.Build.XRRig
                 Undo.DestroyObjectImmediate(existing);
             }
 
-            if (!XRRigSampleImporter.EnsureSamplesImported())
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectRigPrefabPath);
+
+            if (prefab == null && !XRRigSampleImporter.EnsureSamplesImported())
             {
                 if (interactive)
                 {
@@ -51,7 +62,7 @@ namespace SafeSite.Build.XRRig
                 return false;
             }
 
-            var prefab = FindRigPrefab(HandsRigPrefabName) ?? FindRigPrefab(ControllerOnlyRigPrefabName);
+            prefab ??= FindRigPrefab(HandsRigPrefabName) ?? FindRigPrefab(ControllerOnlyRigPrefabName);
             if (prefab == null)
             {
                 Debug.LogError(
@@ -73,10 +84,20 @@ namespace SafeSite.Build.XRRig
             EditorSceneManager.MarkSceneDirty(scene);
             Selection.activeGameObject = rigInstance;
 
-            var usedHandsRig = prefab.name == HandsRigPrefabName;
-            Debug.Log(usedHandsRig
-                ? $"[XRRig] Created '{RigRootName}' (controllers + OpenXR hand tracking) in scene '{scene.name}'."
-                : $"[XRRig] Created '{RigRootName}' (controllers only — hand-tracking sample was unavailable) in scene '{scene.name}'.");
+            var prefabPath = AssetDatabase.GetAssetPath(prefab);
+            if (prefabPath == ProjectRigPrefabPath)
+            {
+                Debug.Log($"[XRRig] Created '{RigRootName}' from the project-owned rig in scene '{scene.name}'.");
+            }
+            else
+            {
+                var usedHandsRig = prefab.name == HandsRigPrefabName;
+                Debug.LogWarning(
+                    $"[XRRig] Created '{RigRootName}' from the package sample '{prefab.name}' " +
+                    (usedHandsRig ? "(controllers + OpenXR hand tracking)" : "(controllers only — hand-tracking sample was unavailable)") +
+                    $" in scene '{scene.name}'. This rig has no grip-pose Controller Model Anchors, so vendor " +
+                    $"controller models will render at the aim pose. Expected the project rig at '{ProjectRigPrefabPath}'.");
+            }
 
             return true;
         }
