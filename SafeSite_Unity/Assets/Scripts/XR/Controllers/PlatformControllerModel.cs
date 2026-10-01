@@ -29,18 +29,21 @@ namespace SafeSite.XR.Controllers
 private void Awake()
         {
 #if VR_META || VR_PICO
-            // "Left/Right Controller Visual" mirrors the generic XRI model onto the right hand by
-            // negating local X scale (its own model child has no scale override, relying on that
-            // parent flip). Vendor models are already correctly modelled per hand, so on the right
-            // side we counter-scale the instantiated model by -1 to undo the parent's mirroring.
-            var modelScale = isLeftHand ? Vector3.one : new Vector3(-1f, 1f, 1f);
+            // Vendor models are authored in the frame of the tracked controller pose itself (Meta's
+            // OVR controller anchor is the OpenXR aim pose - see OVRRuntimeController, which adds a
+            // -60 deg X offset only for grip-authored glTF models - and the XRI "Left/Right Controller"
+            // TrackedPoseDriver is bound to pointerPosition/pointerRotation, i.e. that same aim pose).
+            // So they must sit at identity directly under the tracked controller. This component's own
+            // transform ("Left/Right Controller Visual") is NOT that frame: it carries a 180 deg Y turn,
+            // a -5 cm Z offset and (on the right) a -1 X mirror that exist only to fit XRI's generic
+            // mesh. Parenting under it is what rendered the vendor models facing backwards.
+            var trackedController = transform.parent != null ? transform.parent : transform;
 #endif
 
 #if VR_META
             if (questControllerPrefab != null)
             {
-                var instance = Instantiate(questControllerPrefab, transform, false);
-                instance.transform.localScale = modelScale;
+                var instance = Instantiate(questControllerPrefab, trackedController, false);
 
                 var helper = instance.GetComponentInChildren<OVRControllerHelper>(true);
                 if (helper != null)
@@ -55,8 +58,7 @@ private void Awake()
 #elif VR_PICO
             if (picoControllerPrefab != null)
             {
-                var instance = Instantiate(picoControllerPrefab, transform, false);
-                instance.transform.localScale = modelScale;
+                Instantiate(picoControllerPrefab, trackedController, false);
 
                 if (fallbackModel != null)
                     fallbackModel.SetActive(false);

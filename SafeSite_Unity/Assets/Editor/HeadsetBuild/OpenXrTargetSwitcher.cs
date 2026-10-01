@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.XR.Management.Metadata;
@@ -7,6 +8,7 @@ using UnityEditor.XR.OpenXR.Features;
 using UnityEngine;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
+using UnityEngine.XR.OpenXR.Features;
 
 namespace SafeSite.Build.Headset
 {
@@ -99,15 +101,33 @@ namespace SafeSite.Build.Headset
             if (settings == null)
                 return;
 
-            foreach (var feature in settings.GetFeatures())
+            var features = settings.GetFeatures();
+            foreach (var feature in features)
             {
-                if (!feature.enabled)
+                if (!feature.enabled || IsHidden(feature))
                     continue;
 
                 var featureId = HeadsetBuildTypeUtil.GetFeatureId(feature.GetType());
                 if (string.IsNullOrEmpty(featureId) || !keepIds.Contains(featureId))
                     feature.enabled = false;
             }
+
+            // Hidden features (e.g. Meta OpenXR's OpenXRLifeCycleFeature) aren't in any feature set and
+            // have no public featureId, but OpenXR only ships a package's native plugins when a feature
+            // whose script sits above the plugin folder is enabled - for com.unity.xr.meta-openxr that's
+            // the hidden lifecycle feature. Disabling it strips libUnityARFoundationMeta.so and the app
+            // crashes on launch with DllNotFoundException. So keep each hidden feature in step with the
+            // visible features of its own package instead.
+            var enabledAssemblies = new HashSet<Assembly>(
+                features.Where(f => f.enabled && !IsHidden(f)).Select(f => f.GetType().Assembly));
+
+            foreach (var feature in features.Where(IsHidden))
+                feature.enabled = enabledAssemblies.Contains(feature.GetType().Assembly);
+        }
+
+        private static bool IsHidden(OpenXRFeature feature)
+        {
+            return feature.GetType().GetCustomAttribute<OpenXRFeatureAttribute>()?.Hidden ?? false;
         }
 
         private static void SetFeatureEnabled(System.Type featureType, bool enabled)

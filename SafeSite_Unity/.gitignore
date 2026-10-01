@@ -70,3 +70,19 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Unity Android/IL2CPP build intermediates
+/.utmp/
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Device logs and crash dumps
+*.logcat
+*.dmp
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini

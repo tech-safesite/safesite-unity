@@ -388,7 +388,7 @@
     },
     "com.unity.xr.openxr": {
       "version": "1.18.0",
-      "depth": 0,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.modules.xr": "1.0.0",
