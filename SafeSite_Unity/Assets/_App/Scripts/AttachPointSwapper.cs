@@ -46,7 +46,6 @@ public class AttachPointSwapper : XRGrabInteractable
 
         }
 
-
         if (name.Contains("controller"))
         {
             print("Picking Up WIth Controller. Set Attach To Controller ");

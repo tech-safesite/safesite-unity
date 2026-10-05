@@ -2,6 +2,12 @@ using UnityEngine;
 
 public class FallingObjectsScenarioController : MonoBehaviour
 {
+
+    [SerializeField]
+    FallingLoadHandler fallingLoadHandler;
+
+    [SerializeField]
+    private Transform PlayerRig; // Add Auto grabber
 public enum ScenarioState // Update later
     {
         Intro, 
@@ -15,8 +21,23 @@ public enum ScenarioState // Update later
     private ScenarioState currentState;
 
     [SerializeField]
+    private Transform playerStartingPositionTransform;
+
+    [SerializeField]
     private GameObject startingTransformNode;
 
+    [SerializeField]
+    private GameObject middleAccidentNode;
+
+
+    // TEMP Audio CLips
+    [SerializeField]
+    private AudioClip[] placeHolderAudioClips;
+
+    private void Start()
+    {
+        SetCurrentScenarioState(currentState);
+    }
     private void SetCurrentScenarioState(ScenarioState newScenarioState)
     {
 
@@ -25,7 +46,8 @@ public enum ScenarioState // Update later
         switch(currentState)
             {
             case ScenarioState.Intro:
-                StartIntro();
+                Invoke("StartIntro", 6); // Add delay for preview
+               // StartIntro();
                 break;
             case ScenarioState.TeleportToDrill:
                 StartTeleportToDrill();
@@ -44,36 +66,45 @@ public enum ScenarioState // Update later
         
         }
 
+
+  
     private void StartIntro()
     {
-        // Set All Objects To Default State 
+        PlayerRig.transform.position = playerStartingPositionTransform.transform.position; // Eventually have fade / other polish
+        PlayerRig.transform.rotation = playerStartingPositionTransform.transform.rotation;
 
-        // Call Audio / Sequence / Intro Routine, 
 
-
-        // Remove
-        Invoke("StartTeleportToDrill", 5); // for testing
+        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[0], IntroFinished);
     }
 
     private void StartTeleportToDrill()
     {
-        // Turn On First Teleport Node
         startingTransformNode.SetActive(true);
     }
 
     private void StartPickUpDrill()
     {
-
+        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[3]);
     }
 
     private void StartReturn()
     {
-
+        Debug.Log("Start Return. - Come Back The Way You Came");
+        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[4]);
+        middleAccidentNode.SetActive(true);
     }
 
     private void StartAccident()
     {
+        if(currentState != ScenarioState.CraneAccident)
+        {
+            return;
+        }
         Debug.Log("TRIGGER CRANE ACCIDENT");
+        fallingLoadHandler.DropLoad();
+        // Trigger Audio?
+        // Fade To Black Etc
+        
     }
 
 
@@ -81,22 +112,32 @@ public enum ScenarioState // Update later
     
     public void IntroFinished()
     {
+        SetCurrentScenarioState(ScenarioState.TeleportToDrill);
+    }
 
+    public void FirstTeleportNodeHit()
+    {
+        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[1]);
     }
 
     public void DrillReached()
     {
+        SetCurrentScenarioState(ScenarioState.PickupDrill);
 
     }
 
     public void DrillStore()
     {
-
+        SetCurrentScenarioState(ScenarioState.ReturnWithDrill);
     }
 
     public void AccidentTriggered()
     {
-
+        SetCurrentScenarioState(ScenarioState.CraneAccident);
     }
 
+    public void CustomDebugTrigger()
+    {
+        Debug.Log("Attached Event Being Called");
+    }
 }

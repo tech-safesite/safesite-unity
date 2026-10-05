@@ -11,11 +11,19 @@ public class DropOnlySocketInteractor : XRSocketInteractor
             return false;
         }
 
-        // Don't take object from other one
-        if (interactable.isSelected)
+        foreach(var selector in interactable.interactorsSelecting)
         {
-            return false;
+            if(selector != this) 
+            {
+                return false;
+            }
         }
+
+   //     // Don't take object from other one
+  //      if (interactable.isSelected)
+   //     {
+   //         return false;
+   //     }
 
         return true;
     }
