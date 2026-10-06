@@ -32,6 +32,9 @@ public enum ScenarioState // Update later
     [SerializeField]
     private VoiceoverData fallingObjectsVoiceoverData;
 
+    [SerializeField]
+    private CameraShaker cameraShaker; // Might Need Dedciated Global System
+
     private void Awake()
     {
     }
@@ -48,7 +51,7 @@ public enum ScenarioState // Update later
         switch(currentState)
             {
             case ScenarioState.Intro:
-                Invoke("StartIntro", 6); // Add delay for video preview
+                Invoke("StartIntro", 4); // Add delay for video preview
                // StartIntro();
                 break;
             case ScenarioState.TeleportToDrill:
