@@ -10,12 +10,12 @@ public class SafeSiteAudioManager : MonoBehaviour
 
 
     [SerializeField]
-    AudioSource voiceOverAudioSource;
+    private AudioSource voiceOverAudioSource;
 
     [SerializeField]
-    AudioSource sFXAudioSource; 
+    private AudioSource sFXAudioSource;
 
-
+    public bool IsVoiceOverPlayingCurrently => voiceOverAudioSource.isPlaying;
 
     private Coroutine currentVoiceOverRoutine;
 
@@ -63,5 +63,7 @@ public class SafeSiteAudioManager : MonoBehaviour
 
         onFinished?.Invoke();
     }
+
+
 
 }

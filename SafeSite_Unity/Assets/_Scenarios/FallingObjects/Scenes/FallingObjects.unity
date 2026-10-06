@@ -301,7 +301,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3409667930285377366, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775554483640371702, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1221,20 +1221,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 6
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
-      value: 1
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 216518288}
+      objectReference: {fileID: 1870200283}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
-      objectReference: {fileID: 1870200283}
+      objectReference: {fileID: 216518288}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -1245,19 +1245,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: SetActive
-      objectReference: {fileID: 0}
-    - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
-      propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: DrillReached
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
+      propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: SetActive
+      objectReference: {fileID: 0}
+    - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: UnityEngine.GameObject, UnityEngine
+      value: FallingObjectsScenarioController, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
-      value: FallingObjectsScenarioController, Assembly-CSharp
+      value: UnityEngine.GameObject, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1273,7 +1273,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3409667930285377366, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775554483640371702, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3185,7 +3185,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3409667930285377366, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775554483640371702, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4442,7 +4442,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.56698936, b: 0, a: 0.7647059}
+  m_Color: {r: 1, g: 0.5193646, b: 0, a: 0.4627451}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7751,7 +7751,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1975920087
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7796,11 +7796,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
-      value: 6
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[2].m_Mode
-      value: 1
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -7809,11 +7809,11 @@ PrefabInstance:
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
-      objectReference: {fileID: 1985826270}
+      objectReference: {fileID: 1870200283}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[2].m_Target
       value: 
-      objectReference: {fileID: 1870200283}
+      objectReference: {fileID: 1985826270}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -7832,11 +7832,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
-      value: SetActive
+      value: FirstTeleportNodeHit
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[2].m_MethodName
-      value: FirstTeleportNodeHit
+      value: SetActive
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
@@ -7844,11 +7844,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
-      value: UnityEngine.GameObject, UnityEngine
+      value: FallingObjectsScenarioController, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[2].m_TargetAssemblyTypeName
-      value: FallingObjectsScenarioController, Assembly-CSharp
+      value: UnityEngine.GameObject, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 1841280121655404499, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_Teleporting.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_BoolArgument
@@ -7876,7 +7876,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3409667930285377366, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775554483640371702, guid: c9c0db25f2d03b74ab77dd4cbd56b734, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8285,7 +8285,7 @@ MonoBehaviour:
   localOffset: {x: 0.09, y: 0.11, z: 0.95}
   positionSmoothSpeed: 2
   rotationSmoothSpeed: 2
-  ignoreRotation: 1
+  ignoreRotation: 0
 --- !u!114 &2109674949
 MonoBehaviour:
   m_ObjectHideFlags: 0

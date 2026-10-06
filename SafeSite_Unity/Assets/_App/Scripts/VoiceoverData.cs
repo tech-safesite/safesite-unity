@@ -19,7 +19,4 @@ public class VoiceoverData : ScriptableObject
         Debug.LogWarning(" Dialogue Entry '{id}' not found");
         return null;
     }
-
-    
-
 }

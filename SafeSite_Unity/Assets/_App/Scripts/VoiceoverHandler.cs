@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+using System;
 
 public class VoiceoverHandler : MonoBehaviour
 {
@@ -27,7 +29,7 @@ public class VoiceoverHandler : MonoBehaviour
         voiceoverData = voiceoverDataToSet;
     }
 
-    public void PlayVoiceOver(string id)
+    public void PlayVoiceOver(string id, Action onFinished = null)
     {
         if(voiceoverData == null) 
         {
@@ -48,6 +50,18 @@ public class VoiceoverHandler : MonoBehaviour
         {
             SafeSiteAudioManager.Instance.PlayVoiceOver(entry.englishAudio);
         }
+
+        if(onFinished !=null)
+        {
+            StartCoroutine(VoiceoverOnFinished(onFinished));
+        }
+    }
+
+    private IEnumerator VoiceoverOnFinished(Action onFinsished)
+    {
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently) ;
+
+        onFinsished.Invoke();
     }
 
 }

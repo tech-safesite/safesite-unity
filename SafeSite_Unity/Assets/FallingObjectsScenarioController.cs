@@ -75,7 +75,7 @@ public enum ScenarioState // Update later
         PlayerRig.transform.position = playerStartingPositionTransform.transform.position; // Eventually have fade / other polish
         PlayerRig.transform.rotation = playerStartingPositionTransform.transform.rotation;
 
-        VoiceoverHandler.Instance.PlayVoiceOver("intro");
+        VoiceoverHandler.Instance.PlayVoiceOver("intro",IntroFinished);
     }
 
     private void StartTeleportToDrill()
@@ -86,7 +86,7 @@ public enum ScenarioState // Update later
 
     private void StartPickUpDrill()
     {
-        VoiceoverHandler.Instance.PlayVoiceOver("grab drill");
+        VoiceoverHandler.Instance.PlayVoiceOver("grab_drill");
     }
 
     private void StartReturn()
