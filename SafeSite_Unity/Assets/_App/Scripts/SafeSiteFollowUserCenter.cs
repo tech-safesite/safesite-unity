@@ -2,12 +2,29 @@ using UnityEngine;
 
 public class FollowUserCenter : MonoBehaviour
 {
-    [SerializeField] private Transform head;
+    [SerializeField]
+    private Transform head;
 
-    [SerializeField] private Vector3 localOffset = new Vector3(0.35f, -0.65f, 0.15f);
+    [SerializeField]
+    private Vector3 localOffset;
 
-    [SerializeField] private float positionSmoothSpeed = 8f;
-    [SerializeField] private float rotationSmoothSpeed = 8f;
+    [SerializeField]
+    private float positionSmoothSpeed = 8f;
+    [SerializeField] 
+    private float rotationSmoothSpeed = 8f;
+
+
+    [SerializeField]
+    private bool ignoreRotation  = false;
+
+
+    private void Awake()
+    {
+        if (head == null)
+        {
+            head = Camera.main.transform;
+        }    
+    }
 
     private void LateUpdate()
     {
@@ -33,6 +50,10 @@ public class FollowUserCenter : MonoBehaviour
             1f - Mathf.Exp(-positionSmoothSpeed * Time.deltaTime)
         );
 
+        if(ignoreRotation)
+        {
+            return;
+        }
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             targetRotation,

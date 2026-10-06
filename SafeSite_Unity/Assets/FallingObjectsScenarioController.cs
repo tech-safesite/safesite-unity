@@ -29,13 +29,15 @@ public enum ScenarioState // Update later
     [SerializeField]
     private GameObject middleAccidentNode;
 
-
-    // TEMP Audio CLips
     [SerializeField]
-    private AudioClip[] placeHolderAudioClips;
+    private VoiceoverData fallingObjectsVoiceoverData;
 
+    private void Awake()
+    {
+    }
     private void Start()
     {
+        VoiceoverHandler.Instance.SetVoiceOverData(fallingObjectsVoiceoverData);
         SetCurrentScenarioState(currentState);
     }
     private void SetCurrentScenarioState(ScenarioState newScenarioState)
@@ -46,7 +48,7 @@ public enum ScenarioState // Update later
         switch(currentState)
             {
             case ScenarioState.Intro:
-                Invoke("StartIntro", 6); // Add delay for preview
+                Invoke("StartIntro", 6); // Add delay for video preview
                // StartIntro();
                 break;
             case ScenarioState.TeleportToDrill:
@@ -73,24 +75,23 @@ public enum ScenarioState // Update later
         PlayerRig.transform.position = playerStartingPositionTransform.transform.position; // Eventually have fade / other polish
         PlayerRig.transform.rotation = playerStartingPositionTransform.transform.rotation;
 
-
-        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[0], IntroFinished);
+        VoiceoverHandler.Instance.PlayVoiceOver("intro");
     }
 
     private void StartTeleportToDrill()
     {
+        VoiceoverHandler.Instance.PlayVoiceOver("first_teleport");
         startingTransformNode.SetActive(true);
     }
 
     private void StartPickUpDrill()
     {
-        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[3]);
+        VoiceoverHandler.Instance.PlayVoiceOver("grab drill");
     }
 
     private void StartReturn()
     {
-        Debug.Log("Start Return. - Come Back The Way You Came");
-        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[4]);
+        VoiceoverHandler.Instance.PlayVoiceOver("return_way");
         middleAccidentNode.SetActive(true);
     }
 
@@ -117,7 +118,7 @@ public enum ScenarioState // Update later
 
     public void FirstTeleportNodeHit()
     {
-        SafeSiteAudioManager.Instance.PlayVoiceOver(placeHolderAudioClips[1]);
+        VoiceoverHandler.Instance.PlayVoiceOver("second_teleport");
     }
 
     public void DrillReached()
