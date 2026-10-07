@@ -17,9 +17,20 @@ public class FallingLoadHandler : MonoBehaviour
     [SerializeField]
     private CameraShaker cameraShaker;
 
+    [SerializeField]
+    private bool loadDropped = false;
+
+    [SerializeField]
+    private GameObject loadDebris;
+
+    [SerializeField]
+    private GameObject exclusionZone;
+
     private void Start()
     {
         loadVisual.SetActive(false);
+        loadDebris.SetActive(false);
+
     }
     public void DropLoad()
     {
@@ -33,6 +44,26 @@ public class FallingLoadHandler : MonoBehaviour
         Debug.Log("On Load Impact Called");
         onImpactAudioParent.SetActive(true);
         cameraShaker.BeginShake();
+        loadDebris.SetActive(true);
+        loadDropped = true;
+    }
+
+    public bool GetLoadDropped()
+    {
+        return loadDropped;
+    }
+
+    public void ResetLoad()
+    {
+        // Reset Load Position. 
+        animator.SetTrigger("ResetLoad");
+        loadDebris.SetActive(false);
+        // Remove Any Debris etc
+    }
+
+    public void ShowExclusionZone()
+    {
+        exclusionZone.SetActive(true);
     }
 
     // Add Event for On Load Impact here?

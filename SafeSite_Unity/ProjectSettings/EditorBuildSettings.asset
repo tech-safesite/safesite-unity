@@ -9,6 +9,7 @@ EditorBuildSettings:
     path: Assets/_Scenarios/FallingObjects/Scenes/FallingObjects.unity
     guid: 77ee3338abdaaca4d956d87e968943e9
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: bf8086f3bf94f3e408ccca0b933a3947, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 9df2d2356dca67c4bb8afa64727f45b6, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 02054694db5161946b69dabfd38b7141, type: 2}

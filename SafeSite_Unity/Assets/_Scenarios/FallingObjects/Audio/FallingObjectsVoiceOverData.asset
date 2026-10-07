@@ -41,3 +41,86 @@ MonoBehaviour:
     englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
+  - id: post_accident_1
+    englishSubtitles: 'STOP THE LIFT! Stop the lift! '
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: post_accident_2
+    englishSubtitles: Are you alright? Don't move!
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: one_more_step
+    englishSubtitles: 'One more step and that would have been the end of you. '
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_almost_crushed
+    englishSubtitles: Well that was a lucky one! You were almost crushed!
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_look_around_you
+    englishSubtitles: Right. Same Job. Only this time, before you move a foot, have
+      a good look around you.
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_exclusion_zone
+    englishSubtitles: 'That orange colour on the ground is the exclusion zone. Nothing
+      and nobody goes in there while that load is in the air. '
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_banksman_intro
+    englishSubtitles: 'See that lads in the white hat? That;s the banksman. He''s
+      running that lift. Get hs attention. '
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_wave_to_banksman
+    englishSubtitles: Give him a wave to get his attention
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_stay_where_you_are
+    englishSubtitles: 'Stay where you are. I''ve a load coming over. I''ll shout
+      you when it''s safe to cross. '
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_waiting_speech_1
+    englishSubtitles: 'I know. Standing here waiting in the last thing you want when
+      you''re under pressure and somebody''s looking for that drill. '
+    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_waiting_speech_2
+    englishSubtitles: But you know what's worse than being waiting a minute? Being
+      crushed if that load fails again. You barely escaped it last time.
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: correct_good_to_cross
+    englishSubtitles: You're good to cross!
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: end_speech_1
+    englishSubtitles: Good. All that cost is you is thirty seconds!
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: end_speech_2
+    englishSubtitles: You need to be more aware of your surroundings at all times
+      on-site.
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: end_speech_3
+    englishSubtitles: 'At any moment, soomething could go wrong, and you don''t want
+      to be on the wrong end of that. '
+    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}

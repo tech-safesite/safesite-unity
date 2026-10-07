@@ -18,7 +18,7 @@ public class CameraShaker : MonoBehaviour
 
     private void OnEnable()
     {
-        BeginShake();
+      //  BeginShake();
     }
 
     // Update is called once per frame
