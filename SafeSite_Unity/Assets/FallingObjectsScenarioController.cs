@@ -1,6 +1,9 @@
+using System;
 using System.Collections;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation;
 
 public class FallingObjectsScenarioController : MonoBehaviour
 {
@@ -55,6 +58,9 @@ public class FallingObjectsScenarioController : MonoBehaviour
     [SerializeField]
     private Transform correctWayStartingPosition;
 
+    [SerializeField]
+    private GameObject[] returnTeleportNodes;
+
 
     [Header("Load Drop / Accident")]
 
@@ -64,12 +70,35 @@ public class FallingObjectsScenarioController : MonoBehaviour
     [SerializeField]
     private float postAccidentSettleTime;
 
+    [Header("Banksman")]
+
+
     [SerializeField]
     private BanksmanController banksmanController;
 
     [SerializeField]
     private GameObject temp_WaveTrigger;
 
+    [Header("Crane")]
+    [SerializeField]
+    private CraneController craneController;
+
+    // Events
+    public UnityEvent finalTeleportNodeReached;
+
+    // Temp
+    private bool endNodeReached = false;
+
+    private void OnEnable()
+    {
+      //  finalTeleportNodeReached.AddListener(returnTeleportNodes[1].GetComponent<TeleportationAnchor>().activated);
+       // returnTeleportNodes[1].GetComponent<TeleportationAnchor>().teleporting.AddListener(finalTeleportNodeReached);
+    }
+
+    private void OnDisable()
+    {
+        
+    }
 
     private void Awake()
     {
@@ -133,6 +162,7 @@ public class FallingObjectsScenarioController : MonoBehaviour
     {
         VoiceoverHandler.Instance.PlayVoiceOver("first_teleport");
         startingTransformNode.SetActive(true);
+        craneController.MoveCraneOnStart();
     }
 
     private void StartPickUpDrill()
@@ -144,6 +174,7 @@ public class FallingObjectsScenarioController : MonoBehaviour
     {
         VoiceoverHandler.Instance.PlayVoiceOver("return_way");
         middleAccidentNode.SetActive(true);
+        craneController.CraneAccidentMovement();
     }
 
     private void StartAccident()
@@ -153,6 +184,9 @@ public class FallingObjectsScenarioController : MonoBehaviour
             return;
         }
         Debug.Log("TRIGGER CRANE ACCIDENT");
+
+        craneController.CraneLoadAtPoint();
+
         fallingLoadHandler.DropLoad();
 
         StartCoroutine(AccidentDialogueSequence());
@@ -235,12 +269,17 @@ public class FallingObjectsScenarioController : MonoBehaviour
         yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
         // Play Banksman Audio
+        craneController.CraneLoadCross();
 
-        // LoadAnimation -> Wait 
+        VoiceoverHandler.Instance.PlayVoiceOver("correct_waiting_speech_1");
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
-        // Play Wait Audio
+        VoiceoverHandler.Instance.PlayVoiceOver("correct_waiting_speech_2");
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
-        // Load Crossing Along With Exclusion Zone
+        //FInish
+
+        SetCurrentScenarioState(ScenarioState.CorrectWay_SafeToCross);
 
         yield return null;
 
@@ -248,7 +287,38 @@ public class FallingObjectsScenarioController : MonoBehaviour
 
     private void StartCorrectWaySafeToCross()
     {
+        // Set State Defaults to be safe?
 
+        StartCoroutine(StartCorrectWaySafeToCrossRoutine());
+  
+    }
+
+    IEnumerator StartCorrectWaySafeToCrossRoutine()
+    {
+        // You're good to cross
+        VoiceoverHandler.Instance.PlayVoiceOver("correct_good_to_cross");
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
+        // Middle Teleport Point Appears
+        returnTeleportNodes[0].SetActive(true);
+        // Teleport Back
+
+        // Listen for onTeleport On Final One?
+
+        // Wait for Back at Start 
+        yield return new WaitUntil(() => endNodeReached);
+        // end dialogue x3
+        VoiceoverHandler.Instance.PlayVoiceOver("end_speech_1");
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
+        VoiceoverHandler.Instance.PlayVoiceOver("end_speech_2");
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
+        VoiceoverHandler.Instance.PlayVoiceOver("end_speech_3");
+        yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
+        // Fade to Black
+        // End of Scenario 
     }
     private void StartCorrectWayBackAtStart()
     {
@@ -295,5 +365,10 @@ public class FallingObjectsScenarioController : MonoBehaviour
     public void CorrectWayWaveToBanksmanTrigger()
     {
         SetCurrentScenarioState(ScenarioState.CorrectWay_WaveToBanksMan);
+    }
+
+    public void EndTrigger()
+    {
+        endNodeReached = true;
     }
 }

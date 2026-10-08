@@ -28,7 +28,7 @@ public class FallingLoadHandler : MonoBehaviour
 
     private void Start()
     {
-        loadVisual.SetActive(false);
+       // loadVisual.SetActive(false);
         loadDebris.SetActive(false);
 
     }

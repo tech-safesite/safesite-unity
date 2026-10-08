@@ -74,7 +74,7 @@ MonoBehaviour:
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_banksman_intro
-    englishSubtitles: 'See that lads in the white hat? That;s the banksman. He''s
+    englishSubtitles: 'See that lad in the white hat? That;s the banksman. He''s
       running that lift. Get hs attention. '
     englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
     romanianSubtitles: 
