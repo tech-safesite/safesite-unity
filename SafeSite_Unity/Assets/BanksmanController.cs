@@ -21,6 +21,7 @@ public class BanksmanController : MonoBehaviour
     public void TurnTowardPlayerAndWave() 
     {
         animator.SetTrigger("BanksmanTurn");
+        HighlightBanksnan(false);
         // Temp look at constraint?
         // Turn Face Player on?
     }

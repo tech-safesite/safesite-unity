@@ -152,8 +152,11 @@ public class FallingObjectsScenarioController : MonoBehaviour
   
     private void StartIntro()
     {
+
         PlayerRig.transform.position = playerStartingPositionTransform.transform.position; // Eventually have fade / other polish
         PlayerRig.transform.rotation = playerStartingPositionTransform.transform.rotation;
+
+        ScreenFadeController.Instance.FadeOutOfBlack(3);
 
         VoiceoverHandler.Instance.PlayVoiceOver("intro",IntroFinished);
     }
@@ -204,11 +207,17 @@ public class FallingObjectsScenarioController : MonoBehaviour
 
         yield return new WaitForSeconds(postAccidentSettleTime);
 
-        VoiceoverHandler.Instance.PlayVoiceOver("one_more_step",StartCorrectWayReset);
+        VoiceoverHandler.Instance.PlayVoiceOver("one_more_step");
+
+        ScreenFadeController.Instance.EventTransition(StartCorrectWayReset);
+    
     }
 
     private void StartCorrectWayReset()
     {
+
+
+
         // Any Cleanup / Hide Debris
         fallingLoadHandler.ResetLoad();
         // Player Move / Fade
@@ -217,11 +226,14 @@ public class FallingObjectsScenarioController : MonoBehaviour
 
         Camera.main.transform.localPosition = (Vector3.zero);
 
+
+
         StartCoroutine(StartCorrectWayResetRoutine());
     }
 
     private IEnumerator StartCorrectWayResetRoutine()
     {
+
         // Voiceover Lucky One
         VoiceoverHandler.Instance.PlayVoiceOver("correct_almost_crushed");
         yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
