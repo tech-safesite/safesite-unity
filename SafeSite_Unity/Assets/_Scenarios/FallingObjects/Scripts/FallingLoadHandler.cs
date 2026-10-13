@@ -33,6 +33,8 @@ namespace SafeSite.Scenarios.FallingObjects
             // loadVisual.SetActive(false);
             loadDebris.SetActive(false);
 
+
+
         }
         public void DropLoad()
         {

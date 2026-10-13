@@ -8,6 +8,10 @@ using SafeSite.Core.UI;
 using SafeSite.Core.Audio;
 using SafeSite.Core.Voiceover;
 using SafeSite.Core.Utilities;
+using SafeSite.Core.XR;
+using UnityEngine.XR.Interaction.Toolkit;
+using SafeSite.Core.Scenarios;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace SafeSite.Scenarios.FallingObjects
 {
@@ -50,6 +54,7 @@ namespace SafeSite.Scenarios.FallingObjects
         [Header("Current State")]
         private ScenarioState currentState;
 
+
         [Header("Transforms / Nodes")]
 
         [SerializeField]
@@ -67,6 +72,7 @@ namespace SafeSite.Scenarios.FallingObjects
         [SerializeField]
         private GameObject[] returnTeleportNodes;
 
+        private DropOnlySocketInteractor drillSocket;
 
         [Header("Load Drop / Accident")]
 
@@ -95,6 +101,10 @@ namespace SafeSite.Scenarios.FallingObjects
         // Temp
         private bool endNodeReached = false;
 
+        //temp
+        [SerializeField]
+        private NearFarInteractor nearFarInteractor;
+
         private void OnEnable()
         {
             //  finalTeleportNodeReached.AddListener(returnTeleportNodes[1].GetComponent<TeleportationAnchor>().activated);
@@ -109,10 +119,26 @@ namespace SafeSite.Scenarios.FallingObjects
         private void Awake()
         {
         }
+
+        private void OnDestroy()
+        {
+            if (drillSocket != null)
+            {
+                drillSocket.selectEntered.RemoveAllListeners();
+            }
+        }
         private void Start()
         {
+            playerXROrigin = FindAnyObjectByType<XROrigin>();
+            PlayerRig = playerXROrigin.transform;
+
             VoiceoverHandler.Instance.SetVoiceOverData(fallingObjectsVoiceoverData);
             SetCurrentScenarioState(currentState);
+
+            drillSocket = FindAnyObjectByType<DropOnlySocketInteractor>();
+            drillSocket.selectEntered.AddListener(DrillStore);
+
+            Invoke("StartCorrectWayBackAtStart", 10);
         }
         private void SetCurrentScenarioState(ScenarioState newScenarioState)
         {
@@ -154,13 +180,11 @@ namespace SafeSite.Scenarios.FallingObjects
 
         }
 
-
-
         private void StartIntro()
         {
 
-            PlayerRig.transform.position = playerStartingPositionTransform.transform.position; // Eventually have fade / other polish
-            PlayerRig.transform.rotation = playerStartingPositionTransform.transform.rotation;
+            PlayerRig.SetPositionAndRotation(playerStartingPositionTransform.position, playerStartingPositionTransform.rotation); // 
+            playerXROrigin.MatchOriginUpCameraForward(Vector3.up, playerStartingPositionTransform.forward); // make reuseable helper? 
 
             ScreenFadeController.Instance.FadeOutOfBlack(3);
 
@@ -335,12 +359,19 @@ namespace SafeSite.Scenarios.FallingObjects
             VoiceoverHandler.Instance.PlayVoiceOver("end_speech_3");
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
-            // Fade to Black
-            // End of Scenario 
+            SetCurrentScenarioState(ScenarioState.CorrectWay_BackAtStart);
+
+         
         }
+
+
         private void StartCorrectWayBackAtStart()
         {
-
+            nearFarInteractor.enabled = true;
+            TrainingScenarioLoader.Instance.UnloadScenario();
+            
+            // Fade to Black
+            // End of Scenario 
         }
 
         ////////// Public for External Calls / Events
@@ -360,7 +391,7 @@ namespace SafeSite.Scenarios.FallingObjects
             SetCurrentScenarioState(ScenarioState.WrongWay_PickupDrill);
         }
 
-        public void DrillStore()
+        public void DrillStore(SelectEnterEventArgs args)
         {
             SetCurrentScenarioState(ScenarioState.WrongWay_ReturnWithDrill);
         }

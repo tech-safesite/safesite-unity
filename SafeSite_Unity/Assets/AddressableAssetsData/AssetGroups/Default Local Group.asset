@@ -14,12 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: Default Local Group
   m_GUID: 026f673b512bd4c4990669a27840ae34
-  m_SerializeEntries:
-  - m_GUID: 577b6faf755adfc4291bffdd7ff9e169
-    m_Address: Assets/_Scenarios/FallingObjects
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 45018c0cf3d4d0d4bb37b8dc0142ca4a, type: 2}
   m_SchemaSet:

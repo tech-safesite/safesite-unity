@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-
+using Unity.XR.CoreUtils;
 
 namespace SafeSite.Core.Utilities
 {
@@ -21,9 +21,12 @@ namespace SafeSite.Core.Utilities
         private Coroutine shakeRoutine;
         // Start is called once before the first execution of Update after the MonoBehaviour is created
 
-        private void OnEnable()
+        private void Start()
         {
-            //  BeginShake();
+            if(target == null)
+            {
+                target = FindAnyObjectByType<XROrigin>().transform;
+            }
         }
 
         // Update is called once per frame

@@ -30,13 +30,15 @@ namespace SafeSite.Core.UI
 
         public void FadeToBlack(float fadeDuration)
         {
-            StartCoroutine(FadeCanvas(1, fadeDuration));
+            currentFadeRoutine = StartCoroutine(FadeCanvas(1, fadeDuration));
+            Debug.Log("Fade To Black Called");
+
         }
 
         public void FadeOutOfBlack(float fadeDuration)
         {
             Debug.Log("Fade Out Called");
-            StartCoroutine(FadeCanvas(0, fadeDuration));
+           currentFadeRoutine = StartCoroutine(FadeCanvas(0, fadeDuration));
         }
 
         private IEnumerator FadeCanvas(float alphaTarget, float fadeDuration)
@@ -60,9 +62,13 @@ namespace SafeSite.Core.UI
 
                 timeElapsed += Time.deltaTime;
 
+                float value = Mathf.Lerp(startAlpha, alphaTarget, Mathf.Clamp01((timeElapsed / fadeDuration)));
+
+
                 faderCanvasGroup.alpha =
                 Mathf.Lerp(startAlpha, alphaTarget, Mathf.Clamp01((timeElapsed / fadeDuration)));
 
+                Debug.Log("Alpha canvas should now be " + value);
                 yield return null;
 
             }
