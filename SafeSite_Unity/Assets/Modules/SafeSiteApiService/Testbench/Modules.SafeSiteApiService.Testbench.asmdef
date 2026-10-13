@@ -1,0 +1,19 @@
+{
+    "name": "Modules.SafeSiteApiService.Testbench",
+    "rootNamespace": "",
+    "references": [
+        "Modules.SafeSiteApiService.External",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.XR.Interaction.Toolkit"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

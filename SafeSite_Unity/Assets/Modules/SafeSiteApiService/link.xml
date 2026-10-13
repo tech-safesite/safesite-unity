@@ -1,0 +1,5 @@
+<!-- Keeps the API DTOs and their constructors for Newtonsoft under IL2CPP stripping. -->
+<linker>
+  <assembly fullname="Modules.SafeSiteApiService.External" preserve="all" />
+  <assembly fullname="Modules.SafeSiteApiService.Internal" preserve="all" />
+</linker>
