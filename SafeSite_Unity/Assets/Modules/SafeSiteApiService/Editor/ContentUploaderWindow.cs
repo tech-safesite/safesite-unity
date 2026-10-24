@@ -388,7 +388,7 @@ namespace Modules.SafeSiteApiService.Editor
 
         private void OpenBuildFolder()
         {
-            var folder = ContentUploadPipeline.RemoteBuildFolder();
+            var folder = AddressablesContentBuilder.RemoteBuildFolder();
             if (folder == null || !Directory.Exists(folder))
             {
                 Log("No remote build folder yet" + (folder != null ? $" ({folder})" : "") + ".");

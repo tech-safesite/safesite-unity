@@ -10,6 +10,8 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.SceneManagement;
 
 namespace Modules.SafeSiteApiService.Internal
 {
@@ -26,8 +28,12 @@ namespace Modules.SafeSiteApiService.Internal
         private AsyncOperationHandle<IResourceLocator> _catalogHandle;
         private IResourceLocator _locator;
         private Dictionary<string, string> _bundleFiles;
+        private AsyncOperationHandle<SceneInstance> _sceneHandle;
 
         public string LoadedDirectory { get; private set; }
+
+        public bool HasMainScene =>
+            _locator != null && _locator.Locate(ScenarioAddresses.MainScene, typeof(SceneInstance), out IList<IResourceLocation> locations) && locations.Count > 0;
 
         public async Task<IReadOnlyList<string>> LoadCatalogAsync(string localDirectory)
         {
@@ -77,7 +83,8 @@ namespace Modules.SafeSiteApiService.Internal
             }
 
             keys = keys.Distinct().OrderBy(k => k, StringComparer.OrdinalIgnoreCase).ToList();
-            Debug.Log($"{LogPrefix} Loaded catalog {Path.GetFileName(catalogPath)} with {keys.Count} GameObject keys and {_bundleFiles.Count} local bundles.");
+            Debug.Log($"{LogPrefix} Loaded catalog {Path.GetFileName(catalogPath)} with {keys.Count} GameObject keys, " +
+                      $"{(HasMainScene ? "a" : "no")} '{ScenarioAddresses.MainScene}' scene and {_bundleFiles.Count} local bundles.");
             return keys;
         }
 
@@ -95,6 +102,37 @@ namespace Modules.SafeSiteApiService.Internal
             return instance;
         }
 
+        public async Task<Scene> LoadSceneAsync(string key = ScenarioAddresses.MainScene)
+        {
+            if (_locator == null)
+                throw new InvalidOperationException("Load a catalog first.");
+
+            await UnloadSceneAsync();
+            _sceneHandle = Addressables.LoadSceneAsync(key, LoadSceneMode.Additive);
+            await _sceneHandle.Task;
+            if (_sceneHandle.Status != AsyncOperationStatus.Succeeded)
+            {
+                var error = _sceneHandle.OperationException;
+                Addressables.Release(_sceneHandle);
+                _sceneHandle = default;
+                throw new InvalidOperationException($"{LogPrefix} Could not load scene '{key}'", error);
+            }
+
+            var scene = _sceneHandle.Result.Scene;
+            SceneManager.SetActiveScene(scene);
+            Debug.Log($"{LogPrefix} Loaded scene '{key}' ({scene.name}, {scene.rootCount} root objects).");
+            return scene;
+        }
+
+        public async Task UnloadSceneAsync()
+        {
+            if (!_sceneHandle.IsValid())
+                return;
+            var handle = _sceneHandle;
+            _sceneHandle = default;
+            await Addressables.UnloadSceneAsync(handle).Task;
+        }
+
         public void Unload()
         {
             foreach (var instance in _instances)
@@ -104,6 +142,12 @@ namespace Modules.SafeSiteApiService.Internal
             }
 
             _instances.Clear();
+
+            if (_sceneHandle.IsValid())
+            {
+                Addressables.UnloadSceneAsync(_sceneHandle);
+                _sceneHandle = default;
+            }
 
             if (_locator != null)
                 Addressables.RemoveResourceLocator(_locator);

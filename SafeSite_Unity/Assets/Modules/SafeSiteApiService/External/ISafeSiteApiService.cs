@@ -111,7 +111,19 @@ namespace Modules.SafeSiteApiService.External
 
         Task<GameObject> InstantiateAsync(string key, Vector3 position, Quaternion rotation);
 
-        /// <summary>Releases instances and the loaded catalog.</summary>
+        /// <summary>True when the loaded catalog has a scene at <see cref="ScenarioAddresses.MainScene"/>.</summary>
+        bool HasMainScene { get; }
+
+        /// <summary>
+        /// Loads a scene from the loaded catalog additively (the app keeps its XR rig) and makes it the
+        /// active scene so its lighting applies. Replaces a scene loaded earlier this way.
+        /// </summary>
+        Task<UnityEngine.SceneManagement.Scene> LoadSceneAsync(string key = ScenarioAddresses.MainScene);
+
+        /// <summary>Unloads the scene from <see cref="LoadSceneAsync"/>, if any.</summary>
+        Task UnloadSceneAsync();
+
+        /// <summary>Releases instances, the loaded scene and the loaded catalog.</summary>
         void Unload();
     }
 }

@@ -7,9 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Modules.SafeSiteApiService.External;
 using UnityEditor;
-using UnityEditor.AddressableAssets;
-using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace Modules.SafeSiteApiService.Editor
@@ -121,12 +118,6 @@ namespace Modules.SafeSiteApiService.Editor
             public string version;
             public string builtAt;
             public List<BuildFile> files = new List<BuildFile>();
-        }
-
-        public static string RemoteBuildFolder()
-        {
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            return settings == null ? null : Path.GetFullPath(settings.RemoteCatalogBuildPath.GetValue(settings));
         }
 
         public static List<ISafeSitePlatformBuildHook> FindHooks() =>
@@ -252,67 +243,10 @@ namespace Modules.SafeSiteApiService.Editor
 
         private List<BuildFile> Build(UploadOptions options)
         {
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            var folder = RemoteBuildFolder();
-            var previousOverride = settings.OverridePlayerVersion;
-            settings.OverridePlayerVersion = options.Version;
-            try
-            {
-                if (options.CleanBuild)
-                {
-                    _log("Cleaning Addressables content and " + folder);
-                    AddressableAssetSettings.CleanPlayerContent();
-                    if (Directory.Exists(folder))
-                        Directory.Delete(folder, true);
-                }
-
-                _progress?.Report("SafeSite: building content", "Addressables build", 0f);
-                _log("Building Addressables content (catalog_" + options.Version + ").");
-                AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result);
-                if (!string.IsNullOrEmpty(result.Error))
-                    throw new UploadFailedException("Addressables build failed: " + result.Error);
-
-                var files = FilesOf(result, folder);
-                SaveLastBuild(options.Version, files);
-                _log($"Built {files.Count} files ({files.Sum(f => f.SizeBytes) / (1024.0 * 1024.0):0.00} MB) in {folder}");
-                return files;
-            }
-            finally
-            {
-                settings.OverridePlayerVersion = previousOverride;
-                EditorUtility.SetDirty(settings);
-            }
-        }
-
-        /// <summary>The remote bundles and catalog of this build only (older bundles may still sit in the folder).</summary>
-        private List<BuildFile> FilesOf(AddressablesPlayerBuildResult result, string folder)
-        {
-            var root = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var bundle in result.AssetBundleBuildResults)
-                paths.Add(Path.GetFullPath(bundle.FilePath));
-            if (!string.IsNullOrEmpty(result.RemoteCatalogJsonFilePath))
-                paths.Add(Path.GetFullPath(result.RemoteCatalogJsonFilePath));
-            if (!string.IsNullOrEmpty(result.RemoteCatalogHashFilePath))
-                paths.Add(Path.GetFullPath(result.RemoteCatalogHashFilePath));
-
-            var remote = paths.Where(p => p.StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(p)).ToList();
-            if (remote.Count == 0)
-            {
-                _log("Build result listed no remote files; collecting the whole remote build folder.");
-                remote = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToList() : new List<string>();
-            }
-
-            return remote
-                .Where(p => !p.EndsWith(".meta", StringComparison.OrdinalIgnoreCase) && Path.GetFileName(p) != ".DS_Store")
-                .Select(p => new BuildFile
-                {
-                    FullPath = p,
-                    Path = p.Substring(root.Length).Replace('\\', '/'),
-                    SizeBytes = new FileInfo(p).Length,
-                })
-                .OrderBy(f => f.Path, StringComparer.Ordinal)
-                .ToList();
+            _progress?.Report("SafeSite: building content", "Addressables build", 0f);
+            var files = AddressablesContentBuilder.Build(options.Version, options.CleanBuild, _log);
+            SaveLastBuild(options.Version, files);
+            return files;
         }
 
         private static void SaveLastBuild(string version, List<BuildFile> files)

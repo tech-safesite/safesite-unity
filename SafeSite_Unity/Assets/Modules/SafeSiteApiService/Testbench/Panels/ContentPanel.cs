@@ -52,6 +52,22 @@ namespace Modules.SafeSiteApiService.Testbench
             _keys = Ui.DropdownField(catalogRow, new[] { "(load catalog)" });
             Ui.Button(catalogRow, "Instantiate", InstantiateSelected, color: Ui.Accent);
 
+            var sceneRow = Ui.Row(content);
+            Ui.Button(sceneRow, "Load scenario scene", () => Run("Load scenario scene", async () =>
+            {
+                if (Service.Content.LoadedDirectory == null)
+                    return "load a catalog first";
+                if (!Service.Content.HasMainScene)
+                    return $"this catalog has no '{ScenarioAddresses.MainScene}' scene (not a scenario package build)";
+                var scene = await Service.Content.LoadSceneAsync();
+                return $"loaded {scene.name} ({scene.rootCount} root objects)";
+            }), color: Ui.Accent);
+            Ui.Button(sceneRow, "Unload scene", () => Run("Unload scene", async () =>
+            {
+                await Service.Content.UnloadSceneAsync();
+                return "unloaded";
+            }));
+
             _files = Ui.Label(content, "", Ui.FontSize - 2);
         }
 
@@ -113,7 +129,7 @@ namespace Modules.SafeSiteApiService.Testbench
             var keys = await Service.Content.LoadCatalogAsync(Service.Store.GetContentDirectory(scenario.Id, version));
             _catalogKeys = keys.ToList();
             Ui.SetOptions(_keys, _catalogKeys.Count == 0 ? new[] { "(no GameObject keys)" } : _catalogKeys);
-            return $"{_catalogKeys.Count} keys";
+            return $"{_catalogKeys.Count} keys" + (Service.Content.HasMainScene ? $", has '{ScenarioAddresses.MainScene}'" : "");
         });
 
         private void InstantiateSelected() => Run("Instantiate", async () =>

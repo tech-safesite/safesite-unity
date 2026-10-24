@@ -36,7 +36,8 @@ namespace Modules.SafeSiteApiService.Editor
             BundledAssetGroupSchema.BundleNamingStyle.FileNameHash,
         };
 
-        public static ValidationReport ValidateSettings()
+        /// <param name="onlyGroup">Checks just this group (as if it were the only one in the build) instead of every included group.</param>
+        public static ValidationReport ValidateSettings(AddressableAssetGroup onlyGroup = null)
         {
             var report = new ValidationReport();
 
@@ -62,10 +63,11 @@ namespace Modules.SafeSiteApiService.Editor
                                     $"but '{RecommendedRemoteLoadPath}' guarantees nothing is fetched by accident.");
 
             var remoteGroups = 0;
-            foreach (var group in settings.groups.Where(g => g != null))
+            var groups = onlyGroup != null ? new[] { onlyGroup } : settings.groups.Where(g => g != null);
+            foreach (var group in groups)
             {
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema == null || !schema.IncludeInBuild)
+                if (schema == null || (onlyGroup == null && !schema.IncludeInBuild))
                     continue;
 
                 var buildRemote = schema.BuildPath.GetName(settings) == AddressableAssetSettings.kRemoteBuildPath;
