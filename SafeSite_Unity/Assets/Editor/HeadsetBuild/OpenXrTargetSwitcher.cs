@@ -60,6 +60,7 @@ namespace SafeSite.Build.Headset
 
             ApplyRequiredFeatures(target);
             DisableEverythingNotAllowed(target, allSets, allowedSetIds);
+            ApplyDisabledFeatures(target);
 
             EditorUtility.SetDirty(manager);
             var oxrSettings = UnityEngine.XR.OpenXR.OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
@@ -68,6 +69,35 @@ namespace SafeSite.Build.Headset
             AssetDatabase.SaveAssets();
 
             VerifyOnlyOpenXrLoaderAssigned(manager);
+        }
+
+        /// <summary>
+        /// Forces off the features this target explicitly denies. Runs last, after the feature sets
+        /// have had their say: SetFeaturesFromEnabledFeatureSets is all-or-nothing, so a feature set
+        /// that is otherwise correct for the target can still switch on individual features that
+        /// break the build. See HeadsetBuildConfig.MetaArFoundationFeatures for the case that made
+        /// this necessary.
+        /// </summary>
+        private static void ApplyDisabledFeatures(HeadsetTarget target)
+        {
+            if (target.disabledFeatureTypeNames == null || target.disabledFeatureTypeNames.Length == 0)
+                return;
+
+            var disabled = new List<string>();
+            foreach (var type in HeadsetBuildTypeUtil.ResolveTypes(target.disabledFeatureTypeNames, "disabled features"))
+            {
+                var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+                var feature = settings != null ? settings.GetFeature(type) : null;
+                if (feature == null || !feature.enabled)
+                    continue;
+
+                feature.enabled = false;
+                disabled.Add(type.Name);
+            }
+
+            if (disabled.Count > 0)
+                Debug.Log($"[HeadsetBuild] Force-disabled {disabled.Count} feature(s) pulled in by the feature set: " +
+                          string.Join(", ", disabled));
         }
 
         private static void ApplyRequiredFeatures(HeadsetTarget target)
@@ -90,10 +120,17 @@ namespace SafeSite.Build.Headset
                 allSets.Where(s => allowedSetIds.Contains(s.featureSetId) && s.featureIds != null)
                     .SelectMany(s => s.featureIds));
 
+            var requiredTypes = HeadsetBuildTypeUtil.ResolveTypes(target.requiredFeatureTypeNames, "required features");
+
             keepIds.UnionWith(
-                HeadsetBuildTypeUtil.ResolveTypes(target.requiredFeatureTypeNames, "required features")
+                requiredTypes
                     .Select(HeadsetBuildTypeUtil.GetFeatureId)
                     .Where(id => !string.IsNullOrEmpty(id)));
+
+            // Keep required features by concrete Type as well as by id. Feature id resolution is
+            // reflection over a conventionally-named constant, and a feature that names it
+            // differently would otherwise be disabled here moments after being enabled as required.
+            var keepTypes = new HashSet<System.Type>(requiredTypes);
 
             var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
             if (settings == null)
@@ -102,6 +139,9 @@ namespace SafeSite.Build.Headset
             foreach (var feature in settings.GetFeatures())
             {
                 if (!feature.enabled)
+                    continue;
+
+                if (keepTypes.Contains(feature.GetType()))
                     continue;
 
                 var featureId = HeadsetBuildTypeUtil.GetFeatureId(feature.GetType());

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0c6ada042500614cad26bf4fc243bbf, type: 3}
+  m_Name: SafeSiteUploadSettings
+  m_EditorClassIdentifier: 
+  environment: Demo
+  selections: []
+  meta: 1
+  pico: 1
+  cleanBuild: 1
+  skipUnchangedBundles: 1
+  removeOldFiles: 1
+  maxFileSizeMb: 50

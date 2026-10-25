@@ -27,11 +27,19 @@ namespace SafeSite.Build.Headset
             {
                 OpenXrTargetSwitcher.Apply(config, device);
                 AndroidStoreProfile.Apply(config, device);
+                HeadsetAndroidManifest.Apply(device);
+                MetaProjectSetupGate.Apply(device);
+
+                if (device == HeadsetDevice.Pico)
+                    PicoProjectSettingSync.Apply(config);
+
                 KeystoreSigner.EnsureConfigured();
 
                 BeforeAndroidBuild?.Invoke();
 
                 ApkOpenXrValidator.PreValidate(config, device);
+                PoseDriverValidator.ValidateScenes(ResolveScenePaths(config));
+                StandaloneXrSetup.WarnIfUnusableOverLink();
 
                 EditorUserBuildSettings.buildAppBundle = false;
 

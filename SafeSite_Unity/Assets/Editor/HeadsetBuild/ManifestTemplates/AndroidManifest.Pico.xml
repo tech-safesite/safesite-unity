@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+  PICO template. Deliberately free of every Meta/Horizon OS marker: the Quest template's
+  com.oculus.intent.category.VR category, com.oculus.supportedDevices list and
+  horizonos:uses-horizonos-sdk element all shipped in the 0.1.1 PICO APK, because a single
+  hand-written manifest under Assets/Plugins/Android was applied to both targets.
+
+  PICO-specific entries (pvr.app.type, pvr.sdk.version, pxr.sdk.version_code, the hand-tracking
+  permission and pvr.app.id) are injected at build time by the PICO OpenXR SDK's own manifest
+  hooks once its features are enabled, so they must NOT be duplicated here.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:installLocation="auto">
+  <application android:label="@string/app_name" android:icon="@mipmap/app_icon" android:allowBackup="false">
+    <activity android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" android:configChanges="locale|fontScale|keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode" android:launchMode="singleTask" android:name="com.unity3d.player.UnityPlayerGameActivity" android:excludeFromRecents="true" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
+  </application>
+  <uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="true" />
+</manifest>

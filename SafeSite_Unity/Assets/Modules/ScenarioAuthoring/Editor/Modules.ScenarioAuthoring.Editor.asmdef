@@ -1,0 +1,22 @@
+{
+    "name": "Modules.ScenarioAuthoring.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Modules.SafeSiteApiService.External",
+        "Modules.SafeSiteApiService.Editor",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
