@@ -12,10 +12,10 @@ using UnityEngine.Serialization;
 namespace Modules.ScenarioLauncher.Internal
 {
     /// <summary>
-    /// Headset set-up, client sign-in, scenario list, download and play, on top of the SafeSite API
-    /// service. SafeSite links the headset to a client once with an enrollment code; after that the
-    /// client's staff sign in with the client's login code, checked against the hash in the synced
-    /// config so it also works offline. Needs an ISafeSiteApiService in the scene.
+    /// Client sign-in, scenario list, download and play, on top of the SafeSite API service. Any
+    /// client's login code links the headset to that client (online); after that the same code is
+    /// checked against the hash in the synced config, so signing in again also works offline.
+    /// Needs an ISafeSiteApiService in the scene.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ScenarioLauncherService : MonoBehaviour, IScenarioLauncherService
@@ -25,16 +25,17 @@ namespace Modules.ScenarioLauncher.Internal
         [Tooltip("SafeSite environment to use (Local, Demo or Production). Empty keeps the API service's choice.")]
         [SerializeField] private string environmentName = "Local";
 
-        [Tooltip("Derive this device's serial from the set-up (enrollment) code, so one PC can be set up for several " +
-                 "clients (each client sees it as its own headset). Off: the real device id is used, as on a headset.")]
-        [FormerlySerializedAs("serialPerAccessCode")]
-        [SerializeField] private bool serialPerSetUpCode = true;
+        [Tooltip("Derive this device's serial from the login code, so one PC can sign in to several clients " +
+                 "(each client sees it as its own headset). Off: the real device id is used, so the headset " +
+                 "moves to whichever client signs in, as on a real headset.")]
+        [FormerlySerializedAs("serialPerSetUpCode"), FormerlySerializedAs("serialPerAccessCode")]
+        [SerializeField] private bool serialPerCode = true;
 
         private ISafeSiteApiService _api;
         private List<LauncherScenario> _scenarios = new List<LauncherScenario>();
         private bool _busy;
 
-        public LauncherState State { get; private set; } = LauncherState.NotSetUp;
+        public LauncherState State { get; private set; } = LauncherState.SignedOut;
         public string ClientName { get; private set; }
         public string HeadsetLabel { get; private set; }
         public string LicenceStatus { get; private set; }
@@ -65,7 +66,7 @@ namespace Modules.ScenarioLauncher.Internal
 
             if (!_api.Store.IsEnrolled)
             {
-                SetState(LauncherState.NotSetUp);
+                SetState(LauncherState.SignedOut);
                 return;
             }
 
@@ -84,45 +85,6 @@ namespace Modules.ScenarioLauncher.Internal
             }
         }
 
-        public async Task SetUpAsync(string enrollmentCode)
-        {
-            var code = (enrollmentCode ?? "").Trim();
-            if (code.Length == 0)
-            {
-                Fail("Enter the set-up code from the dashboard.");
-                return;
-            }
-
-            if (!Begin(LauncherState.SettingUp))
-                return;
-            try
-            {
-                var response = await _api.EnrollAsync(new EnrollRequest
-                {
-                    Code = code,
-                    SerialNumber = SerialFor(code),
-                    Platform = Application.platform == RuntimePlatform.Android ? CurrentAndroidPlatform() : SafeSitePlatforms.Meta,
-                    Model = SystemInfo.deviceModel,
-                    AppVersion = AppVersion(),
-                });
-                ClientName = response.Client?.Name;
-                HeadsetLabel = response.Label;
-                PlayerPrefs.DeleteKey(LoginKey);
-                Debug.Log($"{LogPrefix} Set up for {ClientName} as {HeadsetLabel}.");
-                await SyncAsync();
-                SetState(LauncherState.SignedOut);
-            }
-            catch (Exception e)
-            {
-                SetState(LauncherState.NotSetUp);
-                Fail(Describe(e));
-            }
-            finally
-            {
-                _busy = false;
-            }
-        }
-
         public async Task SignInAsync(string loginCode)
         {
             var code = Normalise(loginCode);
@@ -136,39 +98,54 @@ namespace Modules.ScenarioLauncher.Internal
                 return;
             try
             {
-                DeviceConfig config;
-                try
+                // Already this client's headset: the code matches its config. Sync first, in case an
+                // admin replaced the code; offline, use the last synced config.
+                if (_api.Store.IsEnrolled)
                 {
-                    // Online: check against the current code, in case an admin replaced it.
-                    config = await SyncAsync();
-                }
-                catch (ApiError e) when ((e.Code == ApiErrorCodes.NetworkError || e.IsTransient) && _api.Store.CachedConfig != null)
-                {
-                    Debug.Log($"{LogPrefix} Offline ({e.Code}); checking the login code against the last synced config.");
-                    config = _api.Store.CachedConfig;
+                    DeviceConfig config = null;
+                    var offline = false;
+                    try
+                    {
+                        config = await SyncAsync();
+                    }
+                    catch (ApiError e) when (IsRemoved(e))
+                    {
+                        // Deactivated (or the local API restarted): the login below links it again.
+                        _api.ForgetHeadset();
+                    }
+                    catch (ApiError e) when (e.Code == ApiErrorCodes.NetworkError || e.IsTransient)
+                    {
+                        Debug.Log($"{LogPrefix} Offline ({e.Code}); checking the login code against the last synced config.");
+                        config = _api.Store.CachedConfig;
+                        offline = true;
+                    }
+
+                    if (Matches(config, code))
+                    {
+                        SignedIn(config);
+                        return;
+                    }
+                    if (offline)
+                    {
+                        SetState(LauncherState.SignedOut);
+                        Fail("Can't reach SafeSite to check that code. Check the internet connection and try again.");
+                        return;
+                    }
                 }
 
-                if (string.IsNullOrEmpty(config?.Client?.LoginCodeHash))
+                // Any other client's code: link (or move) this headset to that client.
+                var response = await _api.LoginAsync(new LoginRequest
                 {
-                    SetState(LauncherState.SignedOut);
-                    Fail("Connect this headset to the internet once, then sign in.");
-                    return;
-                }
-                if (LoginHash(config.Client.Id, code) != config.Client.LoginCodeHash)
-                {
-                    SetState(LauncherState.SignedOut);
-                    Fail("That login code isn't right. Check it with your manager or SafeSite contact.");
-                    return;
-                }
-
-                PlayerPrefs.SetString(LoginKey, config.Client.LoginCodeHash);
-                PlayerPrefs.Save();
-                Debug.Log($"{LogPrefix} Signed in to {ClientName} on {HeadsetLabel}.");
-                SetState(LauncherState.Browsing);
-            }
-            catch (ApiError e) when (IsRemoved(e))
-            {
-                HeadsetRemoved();
+                    LoginCode = code,
+                    SerialNumber = SerialFor(code),
+                    Platform = Application.platform == RuntimePlatform.Android ? CurrentAndroidPlatform() : SafeSitePlatforms.Meta,
+                    Model = SystemInfo.deviceModel,
+                    AppVersion = AppVersion(),
+                });
+                ClientName = response.Client?.Name;
+                HeadsetLabel = response.Label;
+                Debug.Log($"{LogPrefix} Linked to {ClientName} as {HeadsetLabel}.");
+                SignedIn(await SyncAsync());
             }
             catch (Exception e)
             {
@@ -179,6 +156,14 @@ namespace Modules.ScenarioLauncher.Internal
             {
                 _busy = false;
             }
+        }
+
+        private void SignedIn(DeviceConfig config)
+        {
+            PlayerPrefs.SetString(LoginKey, config.Client.LoginCodeHash);
+            PlayerPrefs.Save();
+            Debug.Log($"{LogPrefix} Signed in to {ClientName} on {HeadsetLabel}.");
+            SetState(LauncherState.Browsing);
         }
 
         public async Task RefreshAsync()
@@ -319,10 +304,16 @@ namespace Modules.ScenarioLauncher.Internal
             return !string.IsNullOrEmpty(hash) && PlayerPrefs.GetString(LoginKey, "") == hash;
         }
 
+        private static bool Matches(DeviceConfig config, string normalisedCode)
+        {
+            var hash = config?.Client?.LoginCodeHash;
+            return !string.IsNullOrEmpty(hash) && LoginHash(config.Client.Id, normalisedCode) == hash;
+        }
+
         private static bool IsRemoved(ApiError e) =>
             e.Code == ApiErrorCodes.InvalidToken || e.Code == ApiErrorCodes.HeadsetDeactivated;
 
-        /// <summary>Deactivated in the dashboard (or the local API restarted): SafeSite has to set it up again.</summary>
+        /// <summary>Deactivated in the dashboard (or the local API restarted): signing in again links it again.</summary>
         private void HeadsetRemoved()
         {
             PlayerPrefs.DeleteKey(LoginKey);
@@ -330,8 +321,8 @@ namespace Modules.ScenarioLauncher.Internal
             ClientName = HeadsetLabel = LicenceStatus = null;
             Current = null;
             _scenarios = new List<LauncherScenario>();
-            SetState(LauncherState.NotSetUp);
-            Fail("This headset isn't set up any more. Contact SafeSite.");
+            SetState(LauncherState.SignedOut);
+            Fail("This headset was signed out. Enter your login code again.");
         }
 
         private bool Begin(LauncherState state)
@@ -373,7 +364,7 @@ namespace Modules.ScenarioLauncher.Internal
         private string SerialFor(string code)
         {
             var device = SystemInfo.deviceUniqueIdentifier;
-            if (!serialPerSetUpCode)
+            if (!serialPerCode)
                 return device;
             using var sha = SHA256.Create();
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(device + ":" + Normalise(code)));
@@ -399,11 +390,10 @@ namespace Modules.ScenarioLauncher.Internal
 
             switch (api.Code)
             {
-                case ApiErrorCodes.InvalidCode: return "That set-up code isn't valid, has expired or is used up. Create a new one in the dashboard.";
+                case ApiErrorCodes.InvalidLoginCode: return "That login code isn't right. Check it with your manager or SafeSite contact.";
                 case ApiErrorCodes.ClientSuspended: return "Your company's SafeSite account is suspended. Contact SafeSite.";
                 case ApiErrorCodes.ClientArchived: return "Your company's SafeSite account is closed. Contact SafeSite.";
-                case ApiErrorCodes.HeadsetLimitReached: return "This client has reached its headset limit. Deactivate a headset or raise the limit first.";
-                case ApiErrorCodes.SerialInUse: return "This headset is registered to another client. Deactivate it there first.";
+                case ApiErrorCodes.HeadsetLimitReached: return "Your company is already using all of its headsets. Contact SafeSite to add more.";
                 case ApiErrorCodes.LicenceLocked: return "Your licence has expired, so new scenarios can't be downloaded. Contact SafeSite.";
                 case ApiErrorCodes.NoContent:
                 case ApiErrorCodes.NotFound: return "That scenario isn't available any more. Refresh the list.";

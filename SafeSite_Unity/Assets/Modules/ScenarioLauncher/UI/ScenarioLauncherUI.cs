@@ -37,10 +37,7 @@ namespace Modules.ScenarioLauncher.UI
         private TextMeshProUGUI _client;
         private Button _signOut;
         private GameObject _signInScreen;
-        private TextMeshProUGUI _signInTitle;
-        private TextMeshProUGUI _signInHint;
         private TMP_InputField _code;
-        private bool _showingSetUp;
         private Button _signIn;
         private GameObject _listScreen;
         private RectTransform _list;
@@ -78,38 +75,22 @@ namespace Modules.ScenarioLauncher.UI
         private void Render()
         {
             var state = _launcher.State;
-            var settingUp = state == LauncherState.NotSetUp || state == LauncherState.SettingUp;
-            var signingIn = state == LauncherState.SignedOut || state == LauncherState.SigningIn;
+            var signedIn = state != LauncherState.SignedOut && state != LauncherState.SigningIn;
             var playing = state == LauncherState.Playing;
 
             _backdrop.gameObject.SetActive(!playing);
             _playingBar.gameObject.SetActive(playing);
-            _signInScreen.SetActive(settingUp || signingIn);
+            _signInScreen.SetActive(!signedIn);
             _listScreen.SetActive(state == LauncherState.Browsing);
             _progressScreen.SetActive(state == LauncherState.Downloading || state == LauncherState.Loading);
 
-            if (settingUp != _showingSetUp)
-            {
-                // Switching between set-up and sign-in: don't carry one code into the other.
-                _showingSetUp = settingUp;
-                _code.text = "";
-            }
-            _signInTitle.text = settingUp ? "Set up this headset" : "Sign in";
-            _signInHint.text = settingUp
-                ? "For SafeSite: enter a set-up code from the client's page in the dashboard (Register headset). This links the headset to the client."
-                : $"Enter {_launcher.ClientName ?? "your company"}'s login code. Your manager or SafeSite contact can give it to you.";
-            ((TextMeshProUGUI)_code.placeholder).text = settingUp ? "Set-up code, e.g. K7QM-X3PD" : "Login code, e.g. R4TW-9KXC";
-
-            _client.text = settingUp
-                ? ""
-                : $"{_launcher.ClientName}<color=#{ColorUtility.ToHtmlStringRGB(Muted)}>  ·  {_launcher.HeadsetLabel}{LicenceNote()}</color>";
+            // Any client's code works here, so the header names nobody until someone signs in.
+            _client.text = signedIn
+                ? $"{_launcher.ClientName}<color=#{ColorUtility.ToHtmlStringRGB(Muted)}>  ·  {_launcher.HeadsetLabel}{LicenceNote()}</color>"
+                : "";
             _signOut.gameObject.SetActive(state == LauncherState.Browsing);
-            _signIn.interactable = state == LauncherState.NotSetUp || state == LauncherState.SignedOut;
-            _signIn.GetComponentInChildren<TextMeshProUGUI>().text =
-                state == LauncherState.SettingUp ? "Setting up…"
-                : state == LauncherState.SigningIn ? "Signing in…"
-                : settingUp ? "Set up"
-                : "Sign in";
+            _signIn.interactable = state == LauncherState.SignedOut;
+            _signIn.GetComponentInChildren<TextMeshProUGUI>().text = state == LauncherState.SigningIn ? "Signing in…" : "Sign in";
             _error.text = _launcher.Error ?? "";
 
             if (state == LauncherState.Browsing)
@@ -236,22 +217,15 @@ namespace Modules.ScenarioLauncher.UI
             Layout(screen, flexibleHeight: 1);
             _signInScreen = screen.gameObject;
             Spacer(screen, 30);
-            _signInTitle = Label(screen, "Sign in", 40, Ink, FontStyles.Bold);
-            _signInHint = Label(screen, "", 26, Muted);
-            _code = Input(screen, "");
+            Label(screen, "Sign in", 40, Ink, FontStyles.Bold);
+            Label(screen, "Enter your company's login code. Your manager or SafeSite contact can give it to you.", 26, Muted);
+            _code = Input(screen, "Login code, e.g. R4TW-9KXC");
             _code.onSubmit.AddListener(_ => SignIn());
             _signIn = Button(screen, "Sign in", Brand, BrandInk, SignIn);
             Layout(_signIn.GetComponent<RectTransform>(), minHeight: 72);
         }
 
-        /// <summary>The same screen sets the headset up (SafeSite) or signs the client in.</summary>
-        private void SignIn()
-        {
-            if (_launcher.State == LauncherState.NotSetUp)
-                _ = _launcher.SetUpAsync(_code.text);
-            else
-                _ = _launcher.SignInAsync(_code.text);
-        }
+        private void SignIn() => _ = _launcher.SignInAsync(_code.text);
 
         private void BuildList(RectTransform card)
         {

@@ -6,10 +6,7 @@ namespace Modules.ScenarioLauncher.External
 {
     public enum LauncherState
     {
-        /// <summary>Not linked to a client yet: SafeSite sets it up with an enrollment code.</summary>
-        NotSetUp,
-        SettingUp,
-        /// <summary>Linked to a client, nobody signed in: show the login-code screen.</summary>
+        /// <summary>Nobody signed in: show the login-code screen.</summary>
         SignedOut,
         SigningIn,
         /// <summary>Signed in: show the client's scenarios.</summary>
@@ -21,16 +18,14 @@ namespace Modules.ScenarioLauncher.External
     }
 
     /// <summary>
-    /// The client-facing flow on a headset: sign in with the client's login code, see the scenarios
-    /// the client has, download one and play its scene. SafeSite links each headset to its client once
-    /// beforehand with an enrollment code (<see cref="SetUpAsync"/>); clients never see those.
-    /// Resolve with <see cref="ScenarioLauncherServiceLocator"/>.
+    /// The client-facing flow on a headset: sign in with any client's login code, see the scenarios
+    /// that client has, download one and play its scene. Resolve with <see cref="ScenarioLauncherServiceLocator"/>.
     /// </summary>
     public interface IScenarioLauncherService
     {
         LauncherState State { get; }
 
-        /// <summary>Name of the client this headset belongs to, or null before set-up.</summary>
+        /// <summary>Name of the client this headset belongs to, or null before its first sign-in.</summary>
         string ClientName { get; }
 
         /// <summary>This device's name in the dashboard, e.g. "Headset 4".</summary>
@@ -55,12 +50,10 @@ namespace Modules.ScenarioLauncher.External
         /// <summary>Raised on the main thread whenever any of the above changes.</summary>
         event Action Changed;
 
-        /// <summary>SafeSite only: links this headset to a client with an enrollment code from the dashboard.</summary>
-        Task SetUpAsync(string enrollmentCode);
-
         /// <summary>
-        /// Checks the client's login code (the same on all of its headsets). Works offline once the
-        /// headset has synced at least once.
+        /// Signs in with a client's login code (the same on all of its headsets). Online, any client's
+        /// code works and links the headset to that client. Offline, only the code of the client the
+        /// headset already belongs to works, checked against its last synced config.
         /// </summary>
         Task SignInAsync(string loginCode);
 
@@ -73,7 +66,7 @@ namespace Modules.ScenarioLauncher.External
         /// <summary>Unloads the playing scenario and returns to the list.</summary>
         Task StopAsync();
 
-        /// <summary>Back to the login-code screen. The headset stays set up and keeps its downloads.</summary>
+        /// <summary>Back to the login-code screen. The headset keeps its client and its downloads.</summary>
         void SignOut();
     }
 

@@ -24,6 +24,12 @@ namespace Modules.SafeSiteApiService.Internal
             return SafeSiteJson.Deserialize<EnrollResponse>(result.Text);
         }
 
+        public async Task<EnrollResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
+        {
+            var result = await _http.SendJsonAsync("POST", "/v1/device/login", SafeSiteJson.Serialize(request), null, null, ct);
+            return SafeSiteJson.Deserialize<EnrollResponse>(result.Text);
+        }
+
         public async Task<ConfigResult> GetConfigAsync(string ifNoneMatchConfigVersion = null, CancellationToken ct = default)
         {
             Dictionary<string, string> headers = null;

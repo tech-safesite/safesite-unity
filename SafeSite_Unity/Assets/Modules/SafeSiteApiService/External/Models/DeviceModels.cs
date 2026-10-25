@@ -23,6 +23,17 @@ namespace Modules.SafeSiteApiService.External
         public string AppVersion;
     }
 
+    /// <summary>POST /v1/device/login: links the headset to the client whose login code this is.</summary>
+    [Serializable]
+    public sealed class LoginRequest
+    {
+        public string LoginCode;
+        public string SerialNumber;
+        public string Platform;
+        public string Model;
+        public string AppVersion;
+    }
+
     [Serializable]
     public sealed class ClientRef
     {
