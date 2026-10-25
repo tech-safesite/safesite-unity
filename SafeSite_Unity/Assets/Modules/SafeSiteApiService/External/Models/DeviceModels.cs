@@ -54,6 +54,12 @@ namespace Modules.SafeSiteApiService.External
         public string Name;
         public string Tier;
         public string LogoUrl;
+
+        /// <summary>
+        /// Hex SHA-256 of "&lt;client id&gt;:&lt;login code&gt;" (code uppercased, letters and digits only).
+        /// Check a typed login code against it; it changes when an admin replaces the code.
+        /// </summary>
+        public string LoginCodeHash;
     }
 
     public static class LicenceStatuses
