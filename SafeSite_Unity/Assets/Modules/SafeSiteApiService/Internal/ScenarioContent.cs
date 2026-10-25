@@ -93,12 +93,15 @@ namespace Modules.SafeSiteApiService.Internal
             if (_locator == null)
                 throw new InvalidOperationException("Load a catalog first.");
 
-            var handle = Addressables.InstantiateAsync(key, position, rotation);
+            var handle = Addressables.InstantiateAsync(Locate(key, typeof(GameObject)), position, rotation);
             var instance = await handle.Task;
             if (handle.Status != AsyncOperationStatus.Succeeded || instance == null)
                 throw new InvalidOperationException($"{LogPrefix} Could not instantiate '{key}'", handle.OperationException);
 
             _instances.Add(instance);
+#if UNITY_EDITOR
+            UseEditorShaders(new[] { instance }, false);
+#endif
             return instance;
         }
 
@@ -107,8 +110,9 @@ namespace Modules.SafeSiteApiService.Internal
             if (_locator == null)
                 throw new InvalidOperationException("Load a catalog first.");
 
+            var location = Locate(key, typeof(SceneInstance));
             await UnloadSceneAsync();
-            _sceneHandle = Addressables.LoadSceneAsync(key, LoadSceneMode.Additive);
+            _sceneHandle = Addressables.LoadSceneAsync(location, LoadSceneMode.Additive);
             await _sceneHandle.Task;
             if (_sceneHandle.Status != AsyncOperationStatus.Succeeded)
             {
@@ -120,8 +124,57 @@ namespace Modules.SafeSiteApiService.Internal
 
             var scene = _sceneHandle.Result.Scene;
             SceneManager.SetActiveScene(scene);
+#if UNITY_EDITOR
+            UseEditorShaders(scene.GetRootGameObjects(), true);
+#endif
             Debug.Log($"{LogPrefix} Loaded scene '{key}' ({scene.name}, {scene.rootCount} root objects).");
             return scene;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Scenario bundles are built for Android, and their compiled shaders can't draw in the Editor
+        /// (everything renders magenta). In the Editor only, swap each material's shader for the
+        /// Editor's copy with the same name. Headsets load the bundles' own shaders.
+        /// </summary>
+        private static void UseEditorShaders(IEnumerable<GameObject> roots, bool includeSkybox)
+        {
+            var fixedMaterials = new HashSet<Material>();
+            void Fix(Material material)
+            {
+                if (material == null || material.shader == null || !fixedMaterials.Add(material))
+                    return;
+                var editorShader = Shader.Find(material.shader.name);
+                if (editorShader != null)
+                    material.shader = editorShader;
+            }
+
+            foreach (var root in roots)
+            {
+                foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    foreach (var material in renderer.sharedMaterials)
+                        Fix(material);
+                }
+            }
+
+            if (includeSkybox)
+                Fix(RenderSettings.skybox);
+            if (fixedMaterials.Count > 0)
+                Debug.Log($"{LogPrefix} Editor: using the Editor's shaders for {fixedMaterials.Count} material(s) built for another platform.");
+        }
+#endif
+
+        /// <summary>
+        /// Resolves a key in the downloaded catalog only. Every scenario uses the same addresses
+        /// (scenario/main), and other catalogs (other scenarios, or the Editor's own Addressables
+        /// data in Play Mode) would otherwise answer with the wrong content.
+        /// </summary>
+        private IResourceLocation Locate(string key, Type type)
+        {
+            if (_locator.Locate(key, type, out IList<IResourceLocation> locations) && locations.Count > 0)
+                return locations[0];
+            throw new InvalidOperationException($"{LogPrefix} '{key}' isn't in the loaded catalog ({Path.GetFileName(LoadedDirectory)}).");
         }
 
         public async Task UnloadSceneAsync()
