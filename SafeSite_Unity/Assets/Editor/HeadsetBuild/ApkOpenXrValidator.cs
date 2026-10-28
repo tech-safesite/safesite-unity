@@ -18,6 +18,26 @@ namespace SafeSite.Build.Headset
         private static readonly string[] GenericOpenXrNativeMarkers = { "libopenxr_loader.so", "libUnityOpenXR.so" };
         private const string PicoNativeMarker = "libopenxr_pico.so";
 
+        /// <summary>
+        /// Native libraries that must never appear in the other vendor's APK. VendorPluginGate keeps
+        /// them out; this is the check that proves it, because the 0.1.1 Quest APK shipped all four
+        /// PICO libraries below alongside Meta's OVRPlugin.
+        /// </summary>
+        private static readonly string[] PicoOnlyNativeMarkers =
+        {
+            "libopenxr_pico.so",
+            "libpxrplatformloader.so",
+            "libPICO_TOBAPI.so",
+            "libpvrcapturelib.so",
+            "libCameraRenderingPlugin.so",
+        };
+
+        private static readonly string[] MetaOnlyNativeMarkers =
+        {
+            "libOVRPlugin.so",
+            "libOVRMetricsTool.so",
+        };
+
         public static void PreValidate(HeadsetBuildConfig config, HeadsetDevice device)
         {
             var manager = OpenXrTargetSwitcher.GetManagerSettingsForAndroid();
@@ -32,6 +52,11 @@ namespace SafeSite.Build.Headset
             var target = config.GetTarget(device);
             OpenXrTargetSwitcher.EnsureRequiredFeatureTypesPresent(target);
             AndroidStoreProfile.Validate(config, device);
+            HeadsetAndroidManifest.Validate(device);
+
+            if (device == HeadsetDevice.Pico)
+                PicoProjectSettingSync.Validate(config);
+
             KeystoreSigner.EnsureConfigured();
         }
 
@@ -51,6 +76,8 @@ namespace SafeSite.Build.Headset
                 throw new BuildFailedException(
                     $"APK does not contain an OpenXR native runtime ({string.Join(" or ", GenericOpenXrNativeMarkers)}). This is not a valid OpenXR build.");
             }
+
+            AssertNoForeignVendorNativeLibraries(entryNames, device);
 
             if (device == HeadsetDevice.Pico)
             {
@@ -74,6 +101,27 @@ namespace SafeSite.Build.Headset
             }
 
             Debug.Log($"[HeadsetBuild] APK validated: {apkPath}");
+        }
+
+        /// <summary>
+        /// Fails the build when the other headset's native libraries made it into the APK. Shipping
+        /// both vendors' runtimes is what produced the mixed 0.1.1 builds: PICO's platform libraries
+        /// rode along in the Quest APK, and the two SDKs each expect to own OpenXR initialisation.
+        /// </summary>
+        private static void AssertNoForeignVendorNativeLibraries(string[] entryNames, HeadsetDevice device)
+        {
+            var foreignMarkers = device == HeadsetDevice.Quest ? PicoOnlyNativeMarkers : MetaOnlyNativeMarkers;
+
+            var found = foreignMarkers
+                .Where(marker => entryNames.Any(n => n.EndsWith(marker, StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+
+            if (found.Length > 0)
+            {
+                throw new BuildFailedException(
+                    $"The {device} APK contains native libraries belonging to the other headset: " +
+                    $"{string.Join(", ", found)}. VendorPluginGate should have excluded these.");
+            }
         }
 
         private static bool ContainsMarker(ZipArchiveEntry entry, string marker)

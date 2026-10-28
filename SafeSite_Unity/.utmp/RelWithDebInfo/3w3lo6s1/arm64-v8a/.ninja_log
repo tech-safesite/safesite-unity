@@ -1,0 +1,10 @@
+# ninja log v5
+79	3961	8124721042550685	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	246f22372e4af1f0
+140	4038	8124721043277005	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	d66323d1f46fbd28
+28	4063	8124721043514082	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	4672983d5d269b2a
+232	4372	8124721046758385	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	846a8663611fc7a7
+54	4764	8124721050728419	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	1cdcc37a6a8678ae
+175	4904	8124721052110621	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	99d901e20294a42a
+107	5283	8124721055922389	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	d15a163b04c751bb
+2	5399	8124721057040773	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	fbed27ac2b3fb493
+5400	5679	8124721059909609	E:/COMMERCIAL WORK/Construction Training - Nadine Seward/safesite-unity/SafeSite_Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/3w3lo6s1/obj/arm64-v8a/libgame.so	1b086e5b657b4b86

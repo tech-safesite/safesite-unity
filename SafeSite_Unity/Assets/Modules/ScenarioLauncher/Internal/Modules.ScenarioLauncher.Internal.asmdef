@@ -1,0 +1,17 @@
+{
+    "name": "Modules.ScenarioLauncher.Internal",
+    "rootNamespace": "",
+    "references": [
+        "Modules.ScenarioLauncher.External",
+        "Modules.SafeSiteApiService.External"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

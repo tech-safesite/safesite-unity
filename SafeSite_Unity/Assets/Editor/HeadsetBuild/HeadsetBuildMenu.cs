@@ -22,6 +22,9 @@ namespace SafeSite.Build.Headset
             var config = HeadsetBuildConfig.FindOrThrow();
             OpenXrTargetSwitcher.Apply(config, HeadsetDevice.Quest);
             AndroidStoreProfile.Apply(config, HeadsetDevice.Quest);
+            HeadsetAndroidManifest.Apply(HeadsetDevice.Quest);
+            MetaProjectSetupGate.Apply(HeadsetDevice.Quest);
+            StandaloneXrSetup.Apply(config);
             Debug.Log("[HeadsetBuild] Switched to Quest OpenXR.");
         }
 
@@ -31,7 +34,18 @@ namespace SafeSite.Build.Headset
             var config = HeadsetBuildConfig.FindOrThrow();
             OpenXrTargetSwitcher.Apply(config, HeadsetDevice.Pico);
             AndroidStoreProfile.Apply(config, HeadsetDevice.Pico);
+            HeadsetAndroidManifest.Apply(HeadsetDevice.Pico);
+            PicoProjectSettingSync.Apply(config);
+            MetaProjectSetupGate.Apply(HeadsetDevice.Pico);
+            // Standalone is the Link/Play Mode path and stays on the Meta runtime either way.
+            StandaloneXrSetup.Apply(config);
             Debug.Log("[HeadsetBuild] Switched to Pico OpenXR.");
+        }
+
+        [MenuItem("Build/Set SDK/Configure Quest Link (PC)", priority = 102)]
+        public static void ConfigureQuestLink()
+        {
+            StandaloneXrSetup.Apply(HeadsetBuildConfig.FindOrThrow());
         }
 
         [MenuItem("Build/Validate/Quest Runtime", priority = 200)]

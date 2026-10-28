@@ -1,0 +1,21 @@
+{
+    "name": "Modules.SafeSiteApiService.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Modules.SafeSiteApiService.External",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

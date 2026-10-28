@@ -26,6 +26,10 @@ namespace SafeSite.Build.Headset
         [Tooltip("Assembly-independent full type names of OpenXR features that must be enabled for this target.")]
         public string[] requiredFeatureTypeNames = Array.Empty<string>();
 
+        [Tooltip("Full type names of OpenXR features to force OFF even when an allowed feature set turns them on. " +
+                 "A feature set is all-or-nothing, so this is the only way to drop individual features it pulls in.")]
+        public string[] disabledFeatureTypeNames = Array.Empty<string>();
+
         public string[] extraDefines = Array.Empty<string>();
 
         public AndroidSdkVersions minSdk = AndroidSdkVersions.AndroidApiLevelAuto;
@@ -39,6 +43,35 @@ namespace SafeSite.Build.Headset
     [CreateAssetMenu(menuName = "Headset Build/Config", fileName = "HeadsetBuildConfig")]
     public class HeadsetBuildConfig : ScriptableObject
     {
+        /// <summary>
+        /// Every feature in com.unity.xr.meta-openxr. They all P/Invoke into libUnityARFoundationMeta,
+        /// and that library only ships when OpenXRLifeCycleFeature is enabled, because it is the one
+        /// feature whose PluginPath ("Packages/com.unity.xr.meta-openxr/Runtime") covers the folder the
+        /// library sits in. The Meta feature set enables these AR features WITHOUT enabling
+        /// OpenXRLifeCycleFeature, which shipped a 0.1.1 Quest APK containing the subsystem manifest for
+        /// libUnityARFoundationMeta but not the .so - so ARAnchorFeature.OnInstanceCreate threw
+        /// DllNotFoundException, OpenXR Display_Initialize failed, and the app died on a null function
+        /// pointer inside libOVRPlugin.so.
+        ///
+        /// Nothing in this project uses AR Foundation, so they are all switched off. If passthrough,
+        /// plane detection or anchors are wanted later, remove the ones needed from this list AND make
+        /// sure the native library actually ships (VendorPluginGate force-includes it).
+        /// </summary>
+        private static readonly string[] MetaArFoundationFeatures =
+        {
+            "UnityEngine.XR.OpenXR.Features.Meta.ARSessionFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ARCameraFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ARPlaneFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ARAnchorFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ARRaycastFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ARMeshFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ARBoundingBoxFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.AROcclusionFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.ColocationDiscoveryFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.BoundaryVisibilityFeature",
+            "UnityEngine.XR.OpenXR.Features.Meta.DisplayUtilitiesFeature",
+        };
+
         [Header("Identity")]
         public string reverseDomainPrefix = "com.safesite";
         public string appName = "SafeSite";
@@ -50,6 +83,25 @@ namespace SafeSite.Build.Headset
 
         [Header("Output")]
         public string outputRoot = "Builds";
+
+        /// <summary>
+        /// OpenXR features for the Standalone target, i.e. Editor Play Mode over Quest Link and any
+        /// PC VR player. Link runs on the Meta runtime, so these are the Meta profiles regardless of
+        /// which Android headset is selected. Anything unavailable for Standalone is skipped.
+        ///
+        /// Without at least one interaction profile here, OpenXR creates no XRController device over
+        /// Link and XRInputModalityManager hides the controller objects entirely.
+        /// </summary>
+        [Header("Quest Link (Standalone / Play Mode)")]
+        [Tooltip("Features enabled for the Standalone target, used by Editor Play Mode over Quest Link.")]
+        public string[] linkFeatureTypeNames =
+        {
+            "UnityEngine.XR.OpenXR.Features.Interactions.OculusTouchControllerProfile",
+            "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile",
+            "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile",
+            "UnityEngine.XR.Hands.OpenXR.HandTracking",
+            "UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature",
+        };
 
         [Header("Targets")]
         public HeadsetTarget quest = new HeadsetTarget
@@ -67,7 +119,9 @@ namespace SafeSite.Build.Headset
                 "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile",
                 "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile",
                 "UnityEngine.XR.Hands.OpenXR.HandTracking",
+                "UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature",
             },
+            disabledFeatureTypeNames = MetaArFoundationFeatures,
             extraDefines = new[] { "VR_OPENXR", "VR_META" },
             minSdk = AndroidSdkVersions.AndroidApiLevel32,
             targetSdk = AndroidSdkVersions.AndroidApiLevel34,
@@ -87,7 +141,9 @@ namespace SafeSite.Build.Headset
                 "UnityEngine.XR.OpenXR.Features.Interactions.PICO4UltraControllerProfile",
                 "UnityEngine.XR.OpenXR.Features.Interactions.PICOG3ControllerProfile",
                 "UnityEngine.XR.Hands.OpenXR.HandTracking",
+                "UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature",
             },
+            disabledFeatureTypeNames = MetaArFoundationFeatures,
             extraDefines = new[] { "VR_OPENXR", "VR_PICO" },
             minSdk = AndroidSdkVersions.AndroidApiLevel29,
             targetSdk = AndroidSdkVersions.AndroidApiLevel34,

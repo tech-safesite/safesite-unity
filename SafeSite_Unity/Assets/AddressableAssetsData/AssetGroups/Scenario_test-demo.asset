@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Scenario_test-demo
+  m_EditorClassIdentifier: 
+  m_GroupName: Scenario_test-demo
+  m_GUID: 86ed9d2bbdfcb9045ae980ff16844a79
+  m_SerializeEntries: []
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 431939f064b74df47b196855605b862b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 4182dc71a0ea82c478512e43788bb469, type: 2}
+    - {fileID: 11400000, guid: 6991a06c21d81294c851e48f6faef74e, type: 2}

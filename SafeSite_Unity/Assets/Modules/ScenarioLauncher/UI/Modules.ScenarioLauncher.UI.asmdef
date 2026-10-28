@@ -1,0 +1,19 @@
+{
+    "name": "Modules.ScenarioLauncher.UI",
+    "rootNamespace": "",
+    "references": [
+        "Modules.ScenarioLauncher.External",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.XR.Interaction.Toolkit"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
