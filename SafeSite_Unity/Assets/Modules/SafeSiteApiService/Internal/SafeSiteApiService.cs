@@ -146,6 +146,16 @@ namespace Modules.SafeSiteApiService.Internal
             return response;
         }
 
+        public async Task<EnrollResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
+        {
+            EnsureInitialized();
+            var response = await _client.Device.LoginAsync(request, ct);
+            _store.SaveEnrollment(response, request.Platform);
+            _client.Device.DeviceToken = response.DeviceToken;
+            Debug.Log($"{LogPrefix} Signed in as {response.Label} for {response.Client?.Name}.");
+            return response;
+        }
+
         public async Task<ConfigResult> SyncConfigAsync(bool useIfNoneMatch, CancellationToken ct = default)
         {
             EnsureInitialized();

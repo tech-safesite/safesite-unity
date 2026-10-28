@@ -31,6 +31,8 @@ namespace Modules.SafeSiteApiService.External
 
         Task<EnrollResponse> EnrollAsync(EnrollRequest request, CancellationToken ct = default);
 
+        Task<EnrollResponse> LoginAsync(LoginRequest request, CancellationToken ct = default);
+
         /// <param name="ifNoneMatchConfigVersion">Sends <c>If-None-Match</c> when not null; a 304 returns <c>NotModified</c>.</param>
         Task<ConfigResult> GetConfigAsync(string ifNoneMatchConfigVersion = null, CancellationToken ct = default);
 

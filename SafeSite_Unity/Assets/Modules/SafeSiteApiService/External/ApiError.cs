@@ -13,6 +13,7 @@ namespace Modules.SafeSiteApiService.External
         public const string InvalidRequest = "invalid_request";
         public const string InvalidToken = "invalid_token";
         public const string InvalidCode = "invalid_code";
+        public const string InvalidLoginCode = "invalid_login_code";
         public const string ClientSuspended = "client_suspended";
         public const string ClientArchived = "client_archived";
         public const string SerialInUse = "serial_in_use";

@@ -84,6 +84,7 @@ namespace Modules.ScenarioLauncher.UI
             _listScreen.SetActive(state == LauncherState.Browsing);
             _progressScreen.SetActive(state == LauncherState.Downloading || state == LauncherState.Loading);
 
+            // Any client's code works here, so the header names nobody until someone signs in.
             _client.text = signedIn
                 ? $"{_launcher.ClientName}<color=#{ColorUtility.ToHtmlStringRGB(Muted)}>  ·  {_launcher.HeadsetLabel}{LicenceNote()}</color>"
                 : "";
@@ -93,7 +94,11 @@ namespace Modules.ScenarioLauncher.UI
             _error.text = _launcher.Error ?? "";
 
             if (state == LauncherState.Browsing)
+            {
+                // Don't leave the code on screen for the next person who signs out.
+                _code.text = "";
                 RenderList();
+            }
 
             if (_launcher.Current != null)
             {
@@ -213,8 +218,8 @@ namespace Modules.ScenarioLauncher.UI
             _signInScreen = screen.gameObject;
             Spacer(screen, 30);
             Label(screen, "Sign in", 40, Ink, FontStyles.Bold);
-            Label(screen, "Enter your company's access code. You'll find it in the SafeSite dashboard, or ask your SafeSite contact.", 26, Muted);
-            _code = Input(screen, "e.g. K7QM-X3PD");
+            Label(screen, "Enter your company's login code. Your manager or SafeSite contact can give it to you.", 26, Muted);
+            _code = Input(screen, "Login code, e.g. R4TW-9KXC");
             _code.onSubmit.AddListener(_ => SignIn());
             _signIn = Button(screen, "Sign in", Brand, BrandInk, SignIn);
             Layout(_signIn.GetComponent<RectTransform>(), minHeight: 72);

@@ -37,6 +37,12 @@ namespace Modules.SafeSiteApiService.External
         /// <summary>Enrolls and stores the returned device token.</summary>
         Task<EnrollResponse> EnrollAsync(EnrollRequest request, CancellationToken ct = default);
 
+        /// <summary>
+        /// Signs in with a client's login code, which links (or moves) this headset to that client,
+        /// and stores the returned device token like <see cref="EnrollAsync"/>.
+        /// </summary>
+        Task<EnrollResponse> LoginAsync(LoginRequest request, CancellationToken ct = default);
+
         /// <summary>Fetches config and caches it. With <paramref name="useIfNoneMatch"/>, a 304 keeps the cached copy.</summary>
         Task<ConfigResult> SyncConfigAsync(bool useIfNoneMatch, CancellationToken ct = default);
 

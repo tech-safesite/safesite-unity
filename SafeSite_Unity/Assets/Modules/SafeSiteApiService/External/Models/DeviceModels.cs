@@ -23,6 +23,17 @@ namespace Modules.SafeSiteApiService.External
         public string AppVersion;
     }
 
+    /// <summary>POST /v1/device/login: links the headset to the client whose login code this is.</summary>
+    [Serializable]
+    public sealed class LoginRequest
+    {
+        public string LoginCode;
+        public string SerialNumber;
+        public string Platform;
+        public string Model;
+        public string AppVersion;
+    }
+
     [Serializable]
     public sealed class ClientRef
     {
@@ -54,6 +65,12 @@ namespace Modules.SafeSiteApiService.External
         public string Name;
         public string Tier;
         public string LogoUrl;
+
+        /// <summary>
+        /// Hex SHA-256 of "&lt;client id&gt;:&lt;login code&gt;" (code uppercased, letters and digits only).
+        /// Check a typed login code against it; it changes when an admin replaces the code.
+        /// </summary>
+        public string LoginCodeHash;
     }
 
     public static class LicenceStatuses

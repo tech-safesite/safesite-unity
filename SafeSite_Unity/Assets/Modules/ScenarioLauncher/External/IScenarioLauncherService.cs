@@ -6,7 +6,7 @@ namespace Modules.ScenarioLauncher.External
 {
     public enum LauncherState
     {
-        /// <summary>No client signed in on this device: show the access-code screen.</summary>
+        /// <summary>Nobody signed in: show the login-code screen.</summary>
         SignedOut,
         SigningIn,
         /// <summary>Signed in: show the client's scenarios.</summary>
@@ -18,14 +18,14 @@ namespace Modules.ScenarioLauncher.External
     }
 
     /// <summary>
-    /// The client-facing flow on a headset: sign in with the client's access code, see the scenarios
-    /// the client has, download one and play its scene. Resolve with <see cref="ScenarioLauncherServiceLocator"/>.
+    /// The client-facing flow on a headset: sign in with any client's login code, see the scenarios
+    /// that client has, download one and play its scene. Resolve with <see cref="ScenarioLauncherServiceLocator"/>.
     /// </summary>
     public interface IScenarioLauncherService
     {
         LauncherState State { get; }
 
-        /// <summary>Signed-in client's name, or null.</summary>
+        /// <summary>Name of the client this headset belongs to, or null before its first sign-in.</summary>
         string ClientName { get; }
 
         /// <summary>This device's name in the dashboard, e.g. "Headset 4".</summary>
@@ -50,7 +50,12 @@ namespace Modules.ScenarioLauncher.External
         /// <summary>Raised on the main thread whenever any of the above changes.</summary>
         event Action Changed;
 
-        Task SignInAsync(string accessCode);
+        /// <summary>
+        /// Signs in with a client's login code (the same on all of its headsets). Online, any client's
+        /// code works and links the headset to that client. Offline, only the code of the client the
+        /// headset already belongs to works, checked against its last synced config.
+        /// </summary>
+        Task SignInAsync(string loginCode);
 
         /// <summary>Re-fetches the client's scenarios.</summary>
         Task RefreshAsync();
@@ -61,7 +66,7 @@ namespace Modules.ScenarioLauncher.External
         /// <summary>Unloads the playing scenario and returns to the list.</summary>
         Task StopAsync();
 
-        /// <summary>Forgets the client on this device (and its downloads).</summary>
+        /// <summary>Back to the login-code screen. The headset keeps its client and its downloads.</summary>
         void SignOut();
     }
 
