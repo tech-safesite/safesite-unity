@@ -20,4 +20,4 @@ MonoBehaviour:
   languages:
   - English
   mainScene: {fileID: 102900000, guid: 101373ec74f0096468f5cf28182fb51b, type: 3}
-  lastExportedVersion: 1.0.0
+  lastExportedVersion: 1.0.2
