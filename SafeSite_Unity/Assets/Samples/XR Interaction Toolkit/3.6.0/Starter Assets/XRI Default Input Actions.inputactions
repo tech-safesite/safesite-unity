@@ -2094,7 +2094,7 @@
                     "name": "Activate",
                     "type": "Button",
                     "id": "41976d89-60de-4deb-bff9-16b4af96b290",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -2263,17 +2263,6 @@
                     "name": "",
                     "id": "6e62575c-e262-4a40-91f0-8a4dd9ffb2d9",
                     "path": "<XRHandDevice>{RightHand}/pinchTouched",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Select",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ffad08e7-8ce9-47a3-b22c-a5295117a45a",
-                    "path": "<XRHandDevice>{RightHand}/graspFirm",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
