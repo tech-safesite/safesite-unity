@@ -1,4 +1,3 @@
-using UnityEditor;
 using UnityEngine;
 
 public class InteractionStateManager : MonoBehaviour
