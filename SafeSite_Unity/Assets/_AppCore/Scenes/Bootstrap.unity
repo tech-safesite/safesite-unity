@@ -7975,6 +7975,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1708099910274487836, guid: 7476193e24161714f8b438b921ecba30, type: 3}
   m_PrefabInstance: {fileID: 1805920411}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &587142383 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8430204946753713594, guid: 7476193e24161714f8b438b921ecba30, type: 3}
+  m_PrefabInstance: {fileID: 1805920411}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 587142382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a07ef133a37d140a87cdf1f1c75fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &591800984
 GameObject:
   m_ObjectHideFlags: 0
@@ -14307,6 +14318,9 @@ MonoBehaviour:
   - {fileID: 1835663504}
   - {fileID: 1279505453}
   - {fileID: 896072725}
+  controllerRays:
+  - {fileID: 1304186443}
+  - {fileID: 587142383}
   currentMode: 2
 --- !u!1 &1183253814
 GameObject:
@@ -15703,6 +15717,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8549206930119886979, guid: 7476193e24161714f8b438b921ecba30, type: 3}
   m_PrefabInstance: {fileID: 1805920411}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1304186443 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1580370952937401125, guid: 7476193e24161714f8b438b921ecba30, type: 3}
+  m_PrefabInstance: {fileID: 1805920411}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1304186442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a07ef133a37d140a87cdf1f1c75fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1323248205 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8329568365691542359, guid: 7476193e24161714f8b438b921ecba30, type: 3}
@@ -20451,7 +20476,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1708099910274487836, guid: 7476193e24161714f8b438b921ecba30, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2101752782581283827, guid: 7476193e24161714f8b438b921ecba30, type: 3}
       propertyPath: m_CastDistance
@@ -20555,7 +20580,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8549206930119886979, guid: 7476193e24161714f8b438b921ecba30, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9196007377684806685, guid: 7476193e24161714f8b438b921ecba30, type: 3}
       propertyPath: m_CastDistance
