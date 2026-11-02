@@ -17,8 +17,6 @@ namespace SafeSite.Core.Scenarios
     {
         public Transform playerRig;
 
-        [SerializeField]
-        private NearFarInteractor nearFarHand;
         public static TrainingScenarioLoader Instance { get; private set; }
         private void Awake()
         {
@@ -91,17 +89,17 @@ namespace SafeSite.Core.Scenarios
             yield return unloadOperation;
 
             ResetPlayerPositionAndRotation();
+            menuObjectsToDisable[0].SetActive(true);
 
             yield return new WaitForSeconds(1);
             ScreenFadeController.Instance.FadeOutOfBlack(2);
             Debug.Log("SceneUnloaded");
 
-            menuObjectsToDisable[0].SetActive(true); //TEMP
+            FindFirstObjectByType<InteractionStateManager>().SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
         }
 
         private void  ResetPlayerPositionAndRotation()
         {
-            nearFarHand.enabled = true;
             playerRig.position = new Vector3(0, playerRig.position.y, 0);
             playerRig.rotation = Quaternion.identity;
             playerRig.GetComponent<XROrigin>().MatchOriginUpCameraForward(Vector3.up, Vector3.forward);

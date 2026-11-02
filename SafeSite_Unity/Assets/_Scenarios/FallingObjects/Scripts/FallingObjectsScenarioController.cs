@@ -34,7 +34,8 @@ namespace SafeSite.Scenarios.FallingObjects
         [SerializeField]
         private XROrigin playerXROrigin; // Add Auto grabber
 
-
+        [SerializeField]
+        private InteractionStateManager interactionStateManager;
 
         public enum ScenarioState // Update later
         {
@@ -118,6 +119,8 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private void Awake()
         {
+            interactionStateManager = FindFirstObjectByType<InteractionStateManager>(
+            FindObjectsInactive.Include);
         }
 
         private void OnDestroy()
@@ -138,7 +141,9 @@ namespace SafeSite.Scenarios.FallingObjects
             drillSocket = FindAnyObjectByType<DropOnlySocketInteractor>();
             drillSocket.selectEntered.AddListener(DrillStore);
 
-            Invoke("StartCorrectWayBackAtStart", 10);
+           // Invoke("StartCorrectWayBackAtStart", 10);
+
+        
         }
         private void SetCurrentScenarioState(ScenarioState newScenarioState)
         {
@@ -189,6 +194,8 @@ namespace SafeSite.Scenarios.FallingObjects
             ScreenFadeController.Instance.FadeOutOfBlack(3);
 
             VoiceoverHandler.Instance.PlayVoiceOver("intro", IntroFinished);
+
+            interactionStateManager.SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
         }
 
         private void StartTeleportToDrill()
@@ -200,6 +207,8 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private void StartPickUpDrill()
         {
+            interactionStateManager.SetMode(InteractionStateManager.InteractionMode.ToolUse);
+
             VoiceoverHandler.Instance.PlayVoiceOver("grab_drill");
         }
 
@@ -208,6 +217,8 @@ namespace SafeSite.Scenarios.FallingObjects
             VoiceoverHandler.Instance.PlayVoiceOver("return_way");
             middleAccidentNode.SetActive(true);
             craneController.CraneAccidentMovement();
+            interactionStateManager.SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
+
         }
 
         private void StartAccident()
@@ -360,18 +371,13 @@ namespace SafeSite.Scenarios.FallingObjects
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
             SetCurrentScenarioState(ScenarioState.CorrectWay_BackAtStart);
-
-         
         }
 
 
         private void StartCorrectWayBackAtStart()
         {
-            nearFarInteractor.enabled = true;
-            TrainingScenarioLoader.Instance.UnloadScenario();
             
-            // Fade to Black
-            // End of Scenario 
+            TrainingScenarioLoader.Instance.UnloadScenario();
         }
 
         ////////// Public for External Calls / Events
