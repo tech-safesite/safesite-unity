@@ -197,6 +197,59 @@ namespace Modules.ScenarioAuthoring.Tests.Editor
         }
 
         [Test]
+        public void ExportSplitsLargeTexturesIntoTheirOwnEntriesAndRemovesThemAfter()
+        {
+            var definition = ScenarioCreator.Create(Slug, Title, "Tests", "Created by a test.", 5, new[] { "English" });
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            var group = ScenarioGroups.Find(definition);
+            var schema = group.GetSchema<BundledAssetGroupSchema>();
+
+            // A material in the group that uses a 1024² texture (over the split size) and a 64² one (under it).
+            var large = WriteTexture($"{Folder}/Textures/large.png", 1024);
+            var small = WriteTexture($"{Folder}/Textures/small.png", 64);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            material.mainTexture = large;
+            material.SetTexture("_BumpMap", small);
+            var materialPath = $"{Folder}/Materials/test.mat";
+            AssetDatabase.CreateAsset(material, materialPath);
+            settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(materialPath), group, false, false);
+            var largeGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(large));
+            var smallGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(small));
+            var packing = schema.BundleMode;
+            var entryCount = group.entries.Count;
+
+            var lines = new List<string>();
+            using (ScenarioGroups.ForExport(definition, group, true, lines.Add))
+            {
+                Assert.That(schema.BundleMode, Is.EqualTo(BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel));
+                var entry = group.GetAssetEntry(largeGuid);
+                Assert.That(entry, Is.Not.Null, "the large texture is packed apart from what uses it");
+                Assert.That(entry.labels, Has.Some.StartsWith("safesite-split-"));
+                Assert.That(group.GetAssetEntry(smallGuid), Is.Null, "small textures stay with what uses them");
+            }
+
+            Assert.That(lines, Has.Some.Contains("1 large asset(s) into 1 bundle"));
+            Assert.That(settings.GetLabels(), Has.None.StartsWith("safesite-split-"));
+            Assert.That(group.GetAssetEntry(largeGuid), Is.Null);
+            Assert.That(group.entries.Count, Is.EqualTo(entryCount));
+            Assert.That(schema.BundleMode, Is.EqualTo(packing));
+        }
+
+        private static Texture2D WriteTexture(string path, int size)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var random = new System.Random(size);
+            var pixels = new Color32[size * size];
+            for (var i = 0; i < pixels.Length; i++)
+                pixels[i] = new Color32((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256), 255);
+            texture.SetPixels32(pixels);
+            System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(path);
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        [Test]
         public void RegistersAnExistingSceneInPlace()
         {
             var first = ScenarioCreator.Create(Slug, Title, "Tests", "Created by a test.", 5, new[] { "English" });

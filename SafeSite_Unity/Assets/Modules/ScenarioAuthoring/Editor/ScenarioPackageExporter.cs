@@ -73,7 +73,7 @@ namespace Modules.ScenarioAuthoring.Editor
 
             // The group's own address and paths (used to test in the app) come back after the build.
             List<BuildFile> shared = null;
-            using (ScenarioGroups.ForExport(definition, group))
+            using (ScenarioGroups.ForExport(definition, group, true, log))
             {
                 foreach (var platform in platforms)
                 {

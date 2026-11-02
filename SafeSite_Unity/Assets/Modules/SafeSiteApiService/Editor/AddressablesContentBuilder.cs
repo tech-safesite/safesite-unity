@@ -64,6 +64,7 @@ namespace Modules.SafeSiteApiService.Editor
                         Directory.Delete(folder, true);
                 }
 
+                ExpandFolderEntries(settings);
                 log("Building Addressables content (catalog_" + version + ").");
                 AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result);
                 if (!string.IsNullOrEmpty(result.Error))
@@ -85,6 +86,24 @@ namespace Modules.SafeSiteApiService.Editor
                     settings.DefaultGroup = previousDefault;
                 settings.OverridePlayerVersion = previousVersion;
                 EditorUtility.SetDirty(settings);
+            }
+        }
+
+        /// <summary>
+        /// Folder entries list their contents lazily, and the build reads that list for every group, built
+        /// or not: a folder no one has expanded since the Editor started makes the build throw a
+        /// NullReferenceException. Expanding them first avoids it.
+        /// </summary>
+        private static void ExpandFolderEntries(AddressableAssetSettings settings)
+        {
+            var scratch = new List<AddressableAssetEntry>();
+            foreach (var group in settings.groups.Where(g => g != null))
+            {
+                foreach (var entry in group.entries.Where(e => e != null && e.IsFolder && e.SubAssets == null))
+                {
+                    scratch.Clear();
+                    entry.GatherAllAssets(scratch, false, true, true);
+                }
             }
         }
 
