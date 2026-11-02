@@ -1,5 +1,7 @@
+using Modules.ScenarioLauncher.External;
 using SafeSite.Core.UI;
 using System.Collections;
+using System.Threading.Tasks;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -65,14 +67,53 @@ namespace SafeSite.Core.Scenarios
         }
         // Start is called once before the first execution of Update after the MonoBehaviour is created
 
+        /// <summary>
+        /// Plays a scenario downloaded from SafeSite (the launcher menu's Start). The download runs
+        /// with the menu still showing its progress; the scene loads behind the fade.
+        /// </summary>
+        public void PlayDownloaded(string scenarioId)
+        {
+            var launcher = ScenarioLauncherServiceLocator.FindInScene();
+            if (launcher != null)
+                StartCoroutine(PlayDownloadedRoutine(launcher, scenarioId));
+        }
+
+        private IEnumerator PlayDownloadedRoutine(IScenarioLauncherService launcher, string scenarioId)
+        {
+            yield return WaitFor(launcher.DownloadAsync(scenarioId));
+            if (!System.Linq.Enumerable.Any(launcher.Scenarios, s => s.Id == scenarioId && s.IsInstalled))
+                yield break; // the menu shows what went wrong
+
+            ScreenFadeController.Instance.FadeToBlack(1);
+            yield return new WaitForSeconds(1.1f);
+            menuObjectsToDisable[0].SetActive(false);
+
+            yield return WaitFor(launcher.PlayAsync(scenarioId));
+            if (launcher.State != LauncherState.Playing)
+            {
+                ResetPlayerPositionAndRotation();
+                menuObjectsToDisable[0].SetActive(true);
+            }
+            ScreenFadeController.Instance.FadeOutOfBlack(2);
+        }
+
+        private static IEnumerator WaitFor(Task task)
+        {
+            yield return new WaitUntil(() => task.IsCompleted);
+        }
+
+        /// <summary>Ends the playing scenario, built-in or downloaded, and returns to the menu.</summary>
         public void UnloadScenario()
         {
-            if(!sceneInstance.IsValid())
+            if (sceneInstance.IsValid())
             {
+                StartCoroutine(UnloadSceneRoutine());
                 return;
             }
 
-            StartCoroutine(UnloadSceneRoutine());
+            var launcher = ScenarioLauncherServiceLocator.FindInScene();
+            if (launcher != null && launcher.State == LauncherState.Playing)
+                StartCoroutine(UnloadSceneRoutine(launcher.StopAsync));
         }
 
         private void Update()
@@ -80,13 +121,21 @@ namespace SafeSite.Core.Scenarios
 
         }
 
-        private IEnumerator UnloadSceneRoutine()
+        /// <param name="unload">Unloads a downloaded scenario; null unloads the built-in one.</param>
+        private IEnumerator UnloadSceneRoutine(System.Func<Task> unload = null)
         {
             ScreenFadeController.Instance.FadeToBlack(2);
             yield return new WaitForSeconds(2);
 
-            var unloadOperation   = Addressables.UnloadSceneAsync(sceneInstance);
-            yield return unloadOperation;
+            if (unload != null)
+            {
+                yield return WaitFor(unload());
+            }
+            else
+            {
+                var unloadOperation = Addressables.UnloadSceneAsync(sceneInstance);
+                yield return unloadOperation;
+            }
 
             ResetPlayerPositionAndRotation();
             menuObjectsToDisable[0].SetActive(true);

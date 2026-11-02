@@ -71,43 +71,47 @@ namespace Modules.ScenarioAuthoring.Editor
             if (hooks.Count == 0 && platforms.Count > 1)
                 log("No ISafeSitePlatformBuildHook found: building once and packaging the same output for every platform.");
 
+            // The group's own address and paths (used to test in the app) come back after the build.
             List<BuildFile> shared = null;
-            foreach (var platform in platforms)
+            using (ScenarioGroups.ForExport(definition, group))
             {
-                List<BuildFile> files;
-                if (hooks.Count > 0)
+                foreach (var platform in platforms)
                 {
-                    log($"[{platform}] Running {hooks.Count} platform hook(s) and building.");
-                    foreach (var hook in hooks)
-                        hook.BeforeContentBuild(platform);
-                    try
+                    List<BuildFile> files;
+                    if (hooks.Count > 0)
                     {
-                        files = AddressablesContentBuilder.Build(version, true, log, group);
-                    }
-                    finally
-                    {
+                        log($"[{platform}] Running {hooks.Count} platform hook(s) and building.");
                         foreach (var hook in hooks)
-                            hook.AfterContentBuild(platform);
+                            hook.BeforeContentBuild(platform);
+                        try
+                        {
+                            files = AddressablesContentBuilder.Build(version, true, log, group);
+                        }
+                        finally
+                        {
+                            foreach (var hook in hooks)
+                                hook.AfterContentBuild(platform);
+                        }
                     }
-                }
-                else
-                {
-                    files = shared ??= AddressablesContentBuilder.Build(version, true, log, group);
-                }
+                    else
+                    {
+                        files = shared ??= AddressablesContentBuilder.Build(version, true, log, group);
+                    }
 
-                var output = AddressablesValidator.ValidateOutput(files, maxFileBytes);
-                foreach (var line in output.Lines)
-                    log(line);
-                if (!output.Ok)
-                    throw new UploadFailedException("Build output breaks the upload rules; see above.");
+                    var output = AddressablesValidator.ValidateOutput(files, maxFileBytes);
+                    foreach (var line in output.Lines)
+                        log(line);
+                    if (!output.Ok)
+                        throw new UploadFailedException("Build output breaks the upload rules; see above.");
 
-                // Copy now: the next platform's clean build deletes the build folder.
-                foreach (var file in files)
-                {
-                    var target = Path.Combine(staging, platform, file.Path);
-                    Directory.CreateDirectory(Path.GetDirectoryName(target));
-                    File.Copy(file.FullPath, target, true);
-                    manifest.Files.Add(new PackageFile { Platform = platform, Path = file.Path, SizeBytes = file.SizeBytes, Sha256 = Sha256Of(target) });
+                    // Copy now: the next platform's clean build deletes the build folder.
+                    foreach (var file in files)
+                    {
+                        var target = Path.Combine(staging, platform, file.Path);
+                        Directory.CreateDirectory(Path.GetDirectoryName(target));
+                        File.Copy(file.FullPath, target, true);
+                        manifest.Files.Add(new PackageFile { Platform = platform, Path = file.Path, SizeBytes = file.SizeBytes, Sha256 = Sha256Of(target) });
+                    }
                 }
             }
 

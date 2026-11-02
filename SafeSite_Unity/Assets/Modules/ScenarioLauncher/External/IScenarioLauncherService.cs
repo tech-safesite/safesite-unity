@@ -60,6 +60,12 @@ namespace Modules.ScenarioLauncher.External
         /// <summary>Re-fetches the client's scenarios.</summary>
         Task RefreshAsync();
 
+        /// <summary>
+        /// Downloads the scenario if it isn't installed at the current version, then returns to
+        /// <see cref="LauncherState.Browsing"/>. Lets a menu show the download before it fades out to play.
+        /// </summary>
+        Task DownloadAsync(string scenarioId);
+
         /// <summary>Downloads the scenario if it isn't installed at the current version, then loads its scene.</summary>
         Task PlayAsync(string scenarioId);
 
@@ -73,11 +79,16 @@ namespace Modules.ScenarioLauncher.External
     public sealed class LauncherScenario
     {
         public string Id;
+
+        /// <summary>Stable id shared with the Unity project, e.g. falling-objects.</summary>
+        public string Slug;
+
         public string Title;
         public string Category;
         public string Description;
         public int DurationMinutes;
         public string Version;
+        public IReadOnlyList<string> Languages = Array.Empty<string>();
 
         /// <summary>Version downloaded on this device, or null.</summary>
         public string InstalledVersion;

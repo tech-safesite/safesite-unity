@@ -25,6 +25,7 @@ namespace Modules.ScenarioAuthoring.Editor
         private readonly List<string> _logLines = new List<string>();
 
         private Foldout _newSection;
+        private ObjectField _newScene;
         private TextField _newSlug;
         private TextField _newTitle;
         private TextField _newCategory;
@@ -33,6 +34,7 @@ namespace Modules.ScenarioAuthoring.Editor
         private TextField _newLanguages;
         private DropdownField _scenario;
         private VisualElement _inspector;
+        private Label _groupInfo;
         private TextField _version;
         private Toggle _meta;
         private Toggle _pico;
@@ -62,13 +64,19 @@ namespace Modules.ScenarioAuthoring.Editor
 
             // New scenario
             _newSection = new Foldout { text = "New scenario", value = false };
+            _newScene = new ObjectField("Existing scene")
+            {
+                objectType = typeof(SceneAsset),
+                tooltip = "Optional. A scene already in Assets/_Scenarios/<Name>/Scenes. Leave empty to create the folders and an empty scene.",
+            };
+            _newScene.RegisterValueChangedCallback(e => SuggestFromScene(e.newValue as SceneAsset));
             _newSlug = new TextField("Slug") { tooltip = "e.g. ladder-access-setup" };
             _newTitle = new TextField("Title");
             _newCategory = new TextField("Category") { tooltip = "The dashboard folder, e.g. Working at Height" };
             _newDescription = new TextField("Description") { multiline = true };
             _newDuration = new IntegerField("Duration (min)") { value = 10 };
             _newLanguages = new TextField("Languages") { value = "English", tooltip = "Comma separated" };
-            foreach (var element in new VisualElement[] { _newSlug, _newTitle, _newCategory, _newDescription, _newDuration, _newLanguages })
+            foreach (var element in new VisualElement[] { _newScene, _newSlug, _newTitle, _newCategory, _newDescription, _newDuration, _newLanguages })
                 _newSection.Add(element);
             _newSection.Add(new Button(CreateScenario) { text = "Create scenario" });
             root.Add(_newSection);
@@ -82,12 +90,15 @@ namespace Modules.ScenarioAuthoring.Editor
             pickRow.Add(_scenario);
             _inspector = new VisualElement();
             root.Add(_inspector);
+            _groupInfo = new Label { style = { whiteSpace = WhiteSpace.Normal, marginTop = 4, marginBottom = 4 } };
+            root.Add(_groupInfo);
             var sceneRow = Row(root);
             sceneRow.Add(new Button(OpenScene) { text = "Open scene" });
             sceneRow.Add(new Button(() => Guard(() =>
             {
-                ScenarioGroups.Ensure(Selected);
-                Log($"Group '{Selected.GroupName}' ready, main scene at '{ScenarioAddresses.MainScene}'.");
+                var group = ScenarioGroups.Ensure(Selected);
+                Log($"Group '{group.Name}' ready, main scene at '{ScenarioGroups.MainSceneAddress(Selected)}'.");
+                OnSelected();
             })) { text = "Repair group" });
 
             // Export
@@ -146,19 +157,39 @@ namespace Modules.ScenarioAuthoring.Editor
         private void OnSelected()
         {
             _inspector.Clear();
+            _groupInfo.text = "";
             var definition = Selected;
             if (definition == null)
                 return;
             _inspector.Add(new InspectorElement(definition));
             _version.value = definition.SuggestedVersion();
+
+            var group = ScenarioGroups.Find(definition);
+            _groupInfo.text = group == null
+                ? "No Addressables group yet: click 'Repair group'."
+                : $"Group '{group.Name}', scene address '{ScenarioGroups.MainSceneAddress(definition) ?? "(not in the group)"}'. " +
+                  $"Exports always load it at '{ScenarioAddresses.MainScene}' on headsets; the group's own settings are kept.";
+        }
+
+        /// <summary>Fills in the slug and title from the scenario folder's name (FallingObjects → falling-objects).</summary>
+        private void SuggestFromScene(SceneAsset scene)
+        {
+            if (scene == null)
+                return;
+            var name = Path.GetFileName(ScenarioCreator.FolderOf(scene));
+            if (string.IsNullOrWhiteSpace(_newSlug.value))
+                _newSlug.value = ScenarioCreator.SlugFor(name);
+            if (string.IsNullOrWhiteSpace(_newTitle.value))
+                _newTitle.value = ScenarioCreator.TitleFor(name);
         }
 
         private void CreateScenario() => Guard(() =>
         {
             var definition = ScenarioCreator.Create(_newSlug.value.Trim(), _newTitle.value.Trim(), _newCategory.value.Trim(),
-                _newDescription.value.Trim(), _newDuration.value, _newLanguages.value.Split(','));
+                _newDescription.value.Trim(), _newDuration.value, _newLanguages.value.Split(','), _newScene.value as SceneAsset);
             Log($"Created {AssetDatabase.GetAssetPath(definition)} with scene {AssetDatabase.GetAssetPath(definition.mainScene)}.");
             _newSection.value = false;
+            _newScene.value = null;
             RefreshList(definition);
             EditorGUIUtility.PingObject(definition);
         });

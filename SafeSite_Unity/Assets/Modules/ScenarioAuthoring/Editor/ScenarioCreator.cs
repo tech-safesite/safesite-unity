@@ -1,17 +1,29 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
 namespace Modules.ScenarioAuthoring.Editor
 {
-    /// <summary>Creates a scenario's folder, scene, definition and Addressables group in one step.</summary>
+    /// <summary>
+    /// Creates a scenario in the scenario team's layout (<c>Assets/_Scenarios/&lt;Name&gt;/Scenes/&lt;Name&gt;.unity</c>
+    /// plus the usual asset folders), or registers a scene that already exists there. The definition sits
+    /// at the scenario folder's root and the scene goes in an Addressables group.
+    /// </summary>
     public static class ScenarioCreator
     {
-        public const string RootFolder = "Assets/Scenarios";
+        public const string RootFolder = "Assets/_Scenarios";
         public const string TemplateScenePath = "Assets/Modules/ScenarioAuthoring/Editor/Templates/ScenarioTemplate.unity";
 
-        public static ScenarioDefinition Create(string slug, string title, string category, string description, int durationMinutes, IEnumerable<string> languages)
+        /// <summary>The folders every scenario has, matching FallingObjects and WorkingAtHeight.</summary>
+        public static readonly string[] Subfolders =
+            { "Animations", "Audio", "LightingData", "Materials", "Models", "Prefabs", "Scenes", "Scripts", "Textures", "_temp" };
+
+        /// <param name="existingScene">A scene already in the project; its scenario folder is the one above its Scenes folder.</param>
+        public static ScenarioDefinition Create(string slug, string title, string category, string description, int durationMinutes,
+            IEnumerable<string> languages, SceneAsset existingScene = null)
         {
             var definition = ScriptableObject.CreateInstance<ScenarioDefinition>();
             definition.slug = slug;
@@ -21,7 +33,7 @@ namespace Modules.ScenarioAuthoring.Editor
             definition.durationMinutes = durationMinutes;
             definition.languages = languages.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l.Trim()).Distinct().ToList();
 
-            // Everything but the scene, which doesn't exist yet.
+            // Everything but the scene, which may not exist yet.
             var errors = definition.Validate().Where(e => !e.Contains("main scene")).ToList();
             if (errors.Count > 0)
             {
@@ -29,35 +41,71 @@ namespace Modules.ScenarioAuthoring.Editor
                 throw new System.ArgumentException(string.Join("\n", errors));
             }
 
-            var folder = $"{RootFolder}/{slug}";
-            if (AssetDatabase.IsValidFolder(folder))
+            string folder;
+            if (existingScene != null)
             {
-                Object.DestroyImmediate(definition);
-                throw new System.ArgumentException($"{folder} already exists.");
+                folder = FolderOf(existingScene);
+                definition.mainScene = existingScene;
+            }
+            else
+            {
+                var name = FolderName(title);
+                folder = $"{RootFolder}/{name}";
+                if (AssetDatabase.IsValidFolder(folder))
+                {
+                    Object.DestroyImmediate(definition);
+                    throw new System.ArgumentException($"{folder} already exists. To use its scene, pick it under 'Existing scene'.");
+                }
+
+                CreateFolders(name);
+                var scenePath = $"{folder}/Scenes/{name}.unity";
+                if (!AssetDatabase.CopyAsset(TemplateScenePath, scenePath))
+                    throw new System.InvalidOperationException($"Couldn't copy the scenario template {TemplateScenePath} to {scenePath}.");
+                definition.mainScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
             }
 
-            if (!AssetDatabase.IsValidFolder(RootFolder))
-                AssetDatabase.CreateFolder("Assets", "Scenarios");
-            AssetDatabase.CreateFolder(RootFolder, slug);
+            var definitionPath = $"{folder}/{slug}.asset";
+            if (AssetDatabase.LoadAssetAtPath<Object>(definitionPath) != null)
+            {
+                Object.DestroyImmediate(definition);
+                throw new System.ArgumentException($"{definitionPath} already exists.");
+            }
 
-            var scenePath = $"{folder}/{slug}.unity";
-            CreateScene(scenePath);
-            definition.mainScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
-
-            AssetDatabase.CreateAsset(definition, $"{folder}/{slug}.asset");
+            AssetDatabase.CreateAsset(definition, definitionPath);
             ScenarioGroups.Ensure(definition);
             AssetDatabase.SaveAssets();
             return definition;
         }
 
-        /// <summary>
-        /// Copies the template (an empty scene with a ScenarioRoot object), so the open scenes are never
-        /// touched. No camera or lights: the app provides the XR rig and loads scenarios additively.
-        /// </summary>
-        private static void CreateScene(string path)
+        /// <summary>"Working at Height" → "WorkingAtHeight".</summary>
+        public static string FolderName(string title)
         {
-            if (!AssetDatabase.CopyAsset(TemplateScenePath, path))
-                throw new System.InvalidOperationException($"Couldn't copy the scenario template {TemplateScenePath} to {path}.");
+            var words = Regex.Split(title ?? "", "[^A-Za-z0-9]+").Where(w => w.Length > 0);
+            return string.Concat(words.Select(w => char.ToUpper(w[0], CultureInfo.InvariantCulture) + w.Substring(1)));
+        }
+
+        /// <summary>"WorkingAtHeight" → "working-at-height".</summary>
+        public static string SlugFor(string folderName) =>
+            Regex.Replace(folderName ?? "", "(?<=[a-z0-9])(?=[A-Z])", "-").ToLowerInvariant();
+
+        /// <summary>"WorkingAtHeight" → "Working At Height".</summary>
+        public static string TitleFor(string folderName) =>
+            Regex.Replace(folderName ?? "", "(?<=[a-z0-9])(?=[A-Z])", " ");
+
+        /// <summary>The scenario folder of a scene: the parent of its Scenes folder, else its own folder.</summary>
+        public static string FolderOf(SceneAsset scene)
+        {
+            var folder = System.IO.Path.GetDirectoryName(AssetDatabase.GetAssetPath(scene))?.Replace('\\', '/') ?? "Assets";
+            return System.IO.Path.GetFileName(folder) == "Scenes" ? System.IO.Path.GetDirectoryName(folder)?.Replace('\\', '/') : folder;
+        }
+
+        private static void CreateFolders(string name)
+        {
+            if (!AssetDatabase.IsValidFolder(RootFolder))
+                AssetDatabase.CreateFolder("Assets", "_Scenarios");
+            AssetDatabase.CreateFolder(RootFolder, name);
+            foreach (var sub in Subfolders)
+                AssetDatabase.CreateFolder($"{RootFolder}/{name}", sub);
         }
     }
 }

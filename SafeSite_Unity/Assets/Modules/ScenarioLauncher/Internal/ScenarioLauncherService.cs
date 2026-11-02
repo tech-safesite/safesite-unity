@@ -25,9 +25,9 @@ namespace Modules.ScenarioLauncher.Internal
         [Tooltip("SafeSite environment to use (Local, Demo or Production). Empty keeps the API service's choice.")]
         [SerializeField] private string environmentName = "Local";
 
-        [Tooltip("Derive this device's serial from the login code, so one PC can sign in to several clients " +
-                 "(each client sees it as its own headset). Off: the real device id is used, so the headset " +
-                 "moves to whichever client signs in, as on a real headset.")]
+        [Tooltip("In the Editor and on PCs, derive this device's serial from the login code, so one PC can sign in " +
+                 "to several clients (each client sees it as its own headset). Headsets always use their real device " +
+                 "id, so a headset moves to whichever client signs in.")]
         [FormerlySerializedAs("serialPerSetUpCode"), FormerlySerializedAs("serialPerAccessCode")]
         [SerializeField] private bool serialPerCode = true;
 
@@ -199,6 +199,31 @@ namespace Modules.ScenarioLauncher.Internal
             }
         }
 
+        public async Task DownloadAsync(string scenarioId)
+        {
+            var scenario = _scenarios.FirstOrDefault(s => s.Id == scenarioId);
+            if (scenario == null || scenario.IsInstalled || State != LauncherState.Browsing || !Begin(LauncherState.Downloading))
+                return;
+
+            Current = scenario;
+            try
+            {
+                await Download(scenario);
+                Current = null;
+                SetState(LauncherState.Browsing);
+            }
+            catch (Exception e)
+            {
+                Current = null;
+                SetState(LauncherState.Browsing);
+                Fail(Describe(e));
+            }
+            finally
+            {
+                _busy = false;
+            }
+        }
+
         public async Task PlayAsync(string scenarioId)
         {
             var scenario = _scenarios.FirstOrDefault(s => s.Id == scenarioId);
@@ -209,19 +234,7 @@ namespace Modules.ScenarioLauncher.Internal
             try
             {
                 if (!scenario.IsInstalled)
-                {
-                    Progress = 0;
-                    ProgressText = "Starting download…";
-                    Raise();
-                    var progress = new Progress<DownloadProgress>(p =>
-                    {
-                        Progress = p.Fraction;
-                        ProgressText = $"{Mb(p.BytesDone)} of {Mb(p.BytesTotal)}";
-                        Raise();
-                    });
-                    await _api.DownloadScenarioAsync(scenario.Id, progress);
-                    scenario.InstalledVersion = scenario.Version;
-                }
+                    await Download(scenario);
 
                 Progress = 1;
                 ProgressText = "Loading…";
@@ -244,6 +257,21 @@ namespace Modules.ScenarioLauncher.Internal
             {
                 _busy = false;
             }
+        }
+
+        private async Task Download(LauncherScenario scenario)
+        {
+            Progress = 0;
+            ProgressText = "Starting download…";
+            Raise();
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                Progress = p.Fraction;
+                ProgressText = $"{Mb(p.BytesDone)} of {Mb(p.BytesTotal)}";
+                Raise();
+            });
+            await _api.DownloadScenarioAsync(scenario.Id, progress);
+            scenario.InstalledVersion = scenario.Version;
         }
 
         public async Task StopAsync()
@@ -288,11 +316,13 @@ namespace Modules.ScenarioLauncher.Internal
                 .Select(s => new LauncherScenario
                 {
                     Id = s.Id,
+                    Slug = s.Slug,
                     Title = s.Title,
                     Category = s.Category,
                     Description = s.Description,
                     DurationMinutes = s.DurationMinutes,
                     Version = s.Version,
+                    Languages = s.Languages?.ToList() ?? new List<string>(),
                     InstalledVersion = _api.Store.GetInstalledVersion(s.Id),
                 })
                 .ToList();
@@ -364,7 +394,7 @@ namespace Modules.ScenarioLauncher.Internal
         private string SerialFor(string code)
         {
             var device = SystemInfo.deviceUniqueIdentifier;
-            if (!serialPerCode)
+            if (!serialPerCode || Application.platform == RuntimePlatform.Android)
                 return device;
             using var sha = SHA256.Create();
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(device + ":" + Normalise(code)));
