@@ -6,6 +6,33 @@ TagManager:
   tags:
   - Anchor
   - Hand
+  - QDSUISection
+  - QDSUITooltip
+  - QDSUIToggleThumbnail
+  - QDSUIToggleSwitch
+  - QDSUIBackplateGradient
+  - QDSUISharedThemeColor
+  - QDSUIAccentColor
+  - QDSUIBorderlessButton
+  - QDSUIIcon
+  - QDSUIToggleBorderlessButton
+  - QDSUILineDrawing
+  - QDSUISecondaryButton
+  - QDSUIToggleButton
+  - QDSUITextSecondaryColor
+  - QDSUIPrimaryButton
+  - QDSUITextInvertedColor
+  - QDSUITextSecondaryInvertedColor
+  - QDSUIBackplate
+  - QDSUITextInputField
+  - QDSUIDestructiveButton
+  - QDSUIToggleCheckboxRadio
+  - Locomotion
+  - PassThroughButton
+  - LocoButton
+  - LocoText
+  - PassThrough
+  - SamplesInfoPanel
   layers:
   - Default
   - TransparentFX

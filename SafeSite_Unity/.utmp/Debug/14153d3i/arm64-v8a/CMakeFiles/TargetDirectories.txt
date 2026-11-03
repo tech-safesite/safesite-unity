@@ -1,0 +1,5 @@
+C:/SafeSite/.utmp/Debug/14153d3i/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/SafeSite/.utmp/Debug/14153d3i/arm64-v8a/CMakeFiles/rebuild_cache.dir
+C:/SafeSite/.utmp/Debug/14153d3i/arm64-v8a/GameActivity/CMakeFiles/game.dir
+C:/SafeSite/.utmp/Debug/14153d3i/arm64-v8a/GameActivity/CMakeFiles/edit_cache.dir
+C:/SafeSite/.utmp/Debug/14153d3i/arm64-v8a/GameActivity/CMakeFiles/rebuild_cache.dir

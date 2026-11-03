@@ -1899,9 +1899,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fallbackModel: {fileID: 4088110610454198647}
+  modelAnchor: {fileID: 0}
   questControllerPrefab: {fileID: 112276, guid: d9809c5e8418bb047bf2c8ba1d1a2cec, type: 3}
   picoControllerPrefab: {fileID: 2673240740586844485, guid: c29eabddf8367d4429e891ca7fe078a2, type: 3}
   isLeftHand: 1
+  extraPositionOffset: {x: 0, y: 0, z: 0}
+  extraRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!1001 &553018692727262454
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2808,9 +2811,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fallbackModel: {fileID: 6499517531677593257}
+  modelAnchor: {fileID: 0}
   questControllerPrefab: {fileID: 112276, guid: d9809c5e8418bb047bf2c8ba1d1a2cec, type: 3}
   picoControllerPrefab: {fileID: 588274493876933136, guid: d8ac97d549ca7354c9183e745cb8d4ae, type: 3}
   isLeftHand: 0
+  extraPositionOffset: {x: 0, y: 0, z: 0}
+  extraRotationOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &6499517531677593257 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3499590388232691612, guid: 9f3369e30fbd31f4bb596b1a99babe83, type: 3}
