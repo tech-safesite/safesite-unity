@@ -265,19 +265,16 @@ namespace SafeSite.Scenarios.FallingObjects
             VoiceoverHandler.Instance.PlayVoiceOver("post_accident_2");
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
+            VoiceoverHandler.Instance.PlayVoiceOver("one_more_step");
+            yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
             yield return new WaitForSeconds(postAccidentSettleTime);
 
-            VoiceoverHandler.Instance.PlayVoiceOver("one_more_step");
-
             ScreenFadeController.Instance.EventTransition(StartCorrectWayReset);
-
         }
 
         private void StartCorrectWayReset()
         {
-
-
-
             // Any Cleanup / Hide Debris
             fallingLoadHandler.ResetLoad();
             // Player Move / Fade
@@ -285,9 +282,6 @@ namespace SafeSite.Scenarios.FallingObjects
          //   playerXROrigin.MatchOriginUpCameraForward(Vector3.up, correctWayStartingPosition.forward); // make reuseable helper? 
 
             Camera.main.transform.localPosition = (Vector3.zero);
-
-
-
             StartCoroutine(StartCorrectWayResetRoutine());
         }
 
@@ -350,7 +344,7 @@ namespace SafeSite.Scenarios.FallingObjects
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
             //FInish
-
+            yield return new WaitForSeconds(10);
             SetCurrentScenarioState(ScenarioState.CorrectWay_SafeToCross);
 
             yield return null;

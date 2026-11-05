@@ -72,14 +72,31 @@ namespace SafeSite.Core.Scenarios
                 return;
             }
 
-            StartCoroutine(UnloadSceneRoutine());
+          //  StartCoroutine(UnloadSceneRoutine());
+
+            StartCoroutine(UnloadSceneSingleRoutine());
         }
 
-        private void Update()
+        public void LoadScenarioSingle(string sceneAddress)
         {
-
+            StartCoroutine(LoadScenarioSingleRoutine(sceneAddress));
         }
 
+        private IEnumerator LoadScenarioSingleRoutine(string sceneAddress)
+        {
+            ScreenFadeController.Instance.FadeToBlack(1);
+            yield return new WaitForSeconds(1.1f);
+
+            sceneInstance = Addressables.LoadSceneAsync(sceneAddress, LoadSceneMode.Single);
+        }
+
+
+        private IEnumerator UnloadSceneSingleRoutine()
+        {
+            ScreenFadeController.Instance.FadeToBlack(2);
+            yield return new WaitForSeconds(2);
+            Addressables.LoadSceneAsync("Bootstrap", LoadSceneMode.Single);
+        }
         private IEnumerator UnloadSceneRoutine()
         {
             ScreenFadeController.Instance.FadeToBlack(2);
