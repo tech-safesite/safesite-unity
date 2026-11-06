@@ -5,7 +5,8 @@
         "Modules.ScenarioLauncher.External",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
-        "Unity.XR.Interaction.Toolkit"
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

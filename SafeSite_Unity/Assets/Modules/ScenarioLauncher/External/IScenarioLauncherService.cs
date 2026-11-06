@@ -74,6 +74,53 @@ namespace Modules.ScenarioLauncher.External
 
         /// <summary>Back to the login-code screen. The headset keeps its client and its downloads.</summary>
         void SignOut();
+
+        // ---- Admin (behind the PIN on the admin screen)
+
+        /// <summary>True while a sign-in, refresh, download or registration is running.</summary>
+        bool IsBusy { get; }
+
+        /// <summary>True once this headset has a device token for the current environment.</summary>
+        bool IsRegistered { get; }
+
+        /// <summary>This device's id in the dashboard, or null before it is registered.</summary>
+        string HeadsetId { get; }
+
+        /// <summary>The SafeSite environment in use (Production, Demo or Local).</summary>
+        string EnvironmentName { get; }
+
+        IReadOnlyList<string> EnvironmentNames { get; }
+
+        /// <summary>
+        /// Registers (enrolls) this headset with a registration code made in the dashboard, which
+        /// links it to that code's client. Afterwards the client's staff sign in with its login code.
+        /// Never throws: the result says what happened, worded for the admin holding the headset.
+        /// </summary>
+        Task<HeadsetRegistration> RegisterHeadsetAsync(string registrationCode);
+
+        /// <summary>
+        /// Switches the SafeSite environment and remembers the choice on this headset. Each
+        /// environment keeps its own registration and downloads. Only while signed out or browsing.
+        /// </summary>
+        void SetEnvironment(string environmentName);
+
+        /// <summary>Deletes this headset's token and caches for the current environment and signs out.</summary>
+        void ForgetHeadset();
+
+        /// <summary>Deletes every downloaded scenario for the current environment.</summary>
+        int DeleteDownloads();
+    }
+
+    /// <summary>Result of <see cref="IScenarioLauncherService.RegisterHeadsetAsync"/>.</summary>
+    public sealed class HeadsetRegistration
+    {
+        public bool Succeeded;
+
+        /// <summary>What happened, worded for the admin holding the headset.</summary>
+        public string Message;
+
+        public string HeadsetLabel;
+        public string ClientName;
     }
 
     public sealed class LauncherScenario

@@ -91,12 +91,7 @@ namespace Modules.ScenarioLauncher.UI.Menu
             foreach (Transform child in grid)
                 child.gameObject.SetActive(false);
 
-            var cards = new List<ScenarioCard>();
-            if (launcher != null && !menu.BuiltInOnly)
-                cards.AddRange(launcher.Scenarios.Select(s => new ScenarioCard { Scenario = s, Title = s.Title, Icon = IconFor(s.Slug, s.Category) }));
-            if (LauncherMenu.AllowBuiltIn)
-                cards.AddRange(builtInScenarios.Where(b => !string.IsNullOrEmpty(b.address))
-                    .Select(b => new ScenarioCard { BuiltInAddress = b.address, Title = b.title, Icon = b.icon ? b.icon : defaultIcon }));
+            var cards = Cards();
 
             var pages = Mathf.Max(1, Mathf.CeilToInt(cards.Count / (float)cardsPerPage));
             _page = Mathf.Clamp(_page, 0, pages - 1);
@@ -117,6 +112,26 @@ namespace Modules.ScenarioLauncher.UI.Menu
             if (messageText)
                 messageText.text = launcher?.Error ?? (cards.Count == 0 ? "No scenarios yet. Ask your SafeSite contact to add some, then press Refresh." : "");
         }
+
+        /// <summary>
+        /// Every scenario this headset can play right now: the client's (once signed in) and, in
+        /// development builds or when an admin turns them on, the ones built into the app.
+        /// </summary>
+        public List<ScenarioCard> Cards()
+        {
+            var launcher = menu.Launcher;
+            var cards = new List<ScenarioCard>();
+            var signedIn = launcher != null && launcher.State != LauncherState.SignedOut && launcher.State != LauncherState.SigningIn;
+            if (signedIn && !menu.BuiltInOnly)
+                cards.AddRange(launcher.Scenarios.Select(s => new ScenarioCard { Scenario = s, Title = s.Title, Icon = IconFor(s.Slug, s.Category) }));
+            if (LauncherMenu.AllowBuiltIn)
+                cards.AddRange(builtInScenarios.Where(b => !string.IsNullOrEmpty(b.address))
+                    .Select(b => new ScenarioCard { BuiltInAddress = b.address, Title = b.title, Icon = b.icon ? b.icon : defaultIcon }));
+            return cards;
+        }
+
+        /// <summary>Status pill text for a card: Ready, Download, Update or Built-in.</summary>
+        public string StatusText(ScenarioCard card) => Status(card).Item1;
 
         private GameObject Spawn(ScenarioCard card, IScenarioLauncherService launcher)
         {

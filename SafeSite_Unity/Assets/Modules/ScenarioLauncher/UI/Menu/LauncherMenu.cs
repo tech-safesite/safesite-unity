@@ -29,6 +29,11 @@ namespace Modules.ScenarioLauncher.UI.Menu
         [SerializeField] private ProgressPanel progressScreen;
         [SerializeField] private HeadsetPanel headsetScreen;
 
+        [Header("Admin (5 taps on the logo, then the PIN)")]
+        [SerializeField] private AdminPinPanel pinScreen;
+        [SerializeField] private AdminPanel adminScreen;
+        [SerializeField] private RegisterHeadsetPanel registerScreen;
+
         [Header("Playing")]
         [Tooltip("Plays a downloaded scenario by id (TrainingScenarioLoader.PlayDownloaded). Without a listener the launcher plays it directly.")]
         public StringEvent playRequested = new StringEvent();
@@ -45,8 +50,18 @@ namespace Modules.ScenarioLauncher.UI.Menu
         /// <summary>True on the scenarios screen opened from "Built-in scenarios" without signing in.</summary>
         public bool BuiltInOnly { get; private set; }
 
-        /// <summary>Development builds (and the Editor) can test scenarios built into the app without signing in.</summary>
-        public static bool AllowBuiltIn => Debug.isDebugBuild;
+        /// <summary>
+        /// Development builds (and the Editor) can test scenarios built into the app without signing
+        /// in; other builds once an admin turns them on.
+        /// </summary>
+        public static bool AllowBuiltIn => Debug.isDebugBuild || AdminSettings.BuiltInScenarios;
+
+        /// <summary>The PIN, admin or register-headset screen is showing.</summary>
+        public bool InAdmin =>
+            _current != null &&
+            ((pinScreen && _current == pinScreen.gameObject) ||
+             (adminScreen && _current == adminScreen.gameObject) ||
+             (registerScreen && _current == registerScreen.gameObject));
 
         private IEnumerable<GameObject> Screens
         {
@@ -58,6 +73,9 @@ namespace Modules.ScenarioLauncher.UI.Menu
                 if (optionsScreen) yield return optionsScreen.gameObject;
                 if (progressScreen) yield return progressScreen.gameObject;
                 if (headsetScreen) yield return headsetScreen.gameObject;
+                if (pinScreen) yield return pinScreen.gameObject;
+                if (adminScreen) yield return adminScreen.gameObject;
+                if (registerScreen) yield return registerScreen.gameObject;
             }
         }
 
@@ -85,8 +103,66 @@ namespace Modules.ScenarioLauncher.UI.Menu
         {
             _started = true;
             BuiltInOnly = false;
+            if (InAdmin)
+                return; // closing the admin screens shows the start
             _current = null;
             Render();
+        }
+
+        /// <summary>Back to the beginning: the login keypad or the client's scenarios, leaving any admin screen.</summary>
+        public void ShowHome()
+        {
+            _current = null;
+            ShowStart();
+        }
+
+        /// <summary>Every scenario this headset can play right now (see <see cref="ScenarioGridPanel.Cards"/>).</summary>
+        public List<ScenarioCard> ScenarioCards() => scenariosScreen ? scenariosScreen.Cards() : new List<ScenarioCard>();
+
+        public string StatusText(ScenarioCard card) => scenariosScreen ? scenariosScreen.StatusText(card) : "";
+
+        // ---- Admin
+
+        /// <summary>Five taps on the logo: ask for the admin PIN.</summary>
+        public void ShowAdminPin()
+        {
+            if (!pinScreen || InAdmin)
+                return;
+            if (_launcher != null && (_launcher.State == LauncherState.Downloading || _launcher.State == LauncherState.Loading))
+                return; // don't hide a download's progress
+            Show(pinScreen.gameObject);
+        }
+
+        /// <summary>The PIN was right (or Back from Register Headset).</summary>
+        public void ShowAdmin()
+        {
+            if (!adminScreen)
+                return;
+            adminScreen.Render();
+            Show(adminScreen.gameObject);
+        }
+
+        public void ShowRegisterHeadset()
+        {
+            if (!registerScreen)
+                return;
+            registerScreen.Render();
+            Show(registerScreen.gameObject);
+        }
+
+        /// <summary>Leaves the admin screens for wherever the launcher's state says.</summary>
+        public void CloseAdmin()
+        {
+            _current = null;
+            if (_started)
+            {
+                Render();
+            }
+            else
+            {
+                // Opened from the splash: back to it; the splash calls ShowStart() when it ends.
+                Show(splashScreen);
+            }
         }
 
         public void ShowScenarios()
@@ -161,6 +237,16 @@ namespace Modules.ScenarioLauncher.UI.Menu
         {
             if (!_started || _launcher == null)
                 return;
+
+            // The admin screens stay up until closed; they follow the launcher themselves.
+            if (InAdmin)
+            {
+                if (adminScreen && _current == adminScreen.gameObject)
+                    adminScreen.Render();
+                else if (registerScreen && _current == registerScreen.gameObject)
+                    registerScreen.Render();
+                return;
+            }
 
             loginScreen.Render();
             switch (_launcher.State)

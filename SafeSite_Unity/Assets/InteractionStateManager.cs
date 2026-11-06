@@ -31,6 +31,8 @@ public class InteractionStateManager : MonoBehaviour
     [SerializeField]
     private InteractionMode currentMode;
 
+    public InteractionMode CurrentMode => currentMode;
+
     // Each controller ray's own interaction layers, put back when it may grab again.
     private readonly Dictionary<NearFarInteractor, InteractionLayerMask> rayLayers = new Dictionary<NearFarInteractor, InteractionLayerMask>();
 

@@ -9,6 +9,7 @@ using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -16,8 +17,10 @@ namespace Modules.ScenarioLauncher.Editor
 {
     /// <summary>
     /// SafeSite > Launcher > Build Bootstrap Menu: adds the launcher's screens (login keypad, download
-    /// progress, headset details) to the designed main menu, cloned from its own panels, buttons and
-    /// text so they share its look, and wires them and the existing screens to <see cref="LauncherMenu"/>.
+    /// progress, headset details, and the admin PIN, admin and register-headset screens opened by five
+    /// taps on the logo) to the designed main menu, plus the in-scenario menu on the left controller's
+    /// menu button, all cloned from the menu's own panels, buttons and text so they share its look,
+    /// and wires them and the existing screens to <see cref="LauncherMenu"/>.
     /// Safe to run again: it removes what it added last time first. Hand-made layout changes to the
     /// generated screens are lost on a rebuild; change the existing screens freely.
     /// </summary>
@@ -42,6 +45,7 @@ namespace Modules.ScenarioLauncher.Editor
             public GameObject Box;
             public GameObject Button;
             public GameObject LoadingBar;
+            public GameObject Logo;
             public Component Tween;
         }
 
@@ -70,6 +74,7 @@ namespace Modules.ScenarioLauncher.Editor
                 Box = setup.Find("Image").gameObject,
                 Button = setup.Find("StartTraining").gameObject,
                 LoadingBar = splash.Find("PreviewLoadingBar").gameObject,
+                Logo = splash.Find("SafeSiteLogo")?.gameObject,
                 Tween = select.GetComponents<Component>().FirstOrDefault(c => c.GetType().Name == "TweenOnEnable"),
             };
 
@@ -87,6 +92,11 @@ namespace Modules.ScenarioLauncher.Editor
             var headset = BuildHeadset(kit, menu);
             var grid = WireScenarioSelect(kit, select, menu);
             var optionsPanel = WireOptions(options, setup, menu);
+            var pin = BuildAdminPin(kit, menu);
+            var admin = BuildAdmin(kit, menu);
+            var register = BuildRegisterHeadset(kit, menu);
+            AddAdminUnlocks(kit, menu, splash, login.transform, select, headset.transform);
+            var globalMenu = BuildGlobalMenu(kit, menu);
 
             Set(menu, "splashScreen", splash.gameObject);
             Set(menu, "loginScreen", login);
@@ -94,15 +104,18 @@ namespace Modules.ScenarioLauncher.Editor
             Set(menu, "optionsScreen", optionsPanel);
             Set(menu, "progressScreen", progress);
             Set(menu, "headsetScreen", headset);
+            Set(menu, "pinScreen", pin);
+            Set(menu, "adminScreen", admin);
+            Set(menu, "registerScreen", register);
 
             WireApp(menu);
 
-            foreach (var screen in new Component[] { login, progress, headset })
+            foreach (var screen in new Component[] { login, progress, headset, pin, admin, register })
                 screen.gameObject.SetActive(false);
 
             EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);
             Selection.activeGameObject = menuObject;
-            Debug.Log($"{LogPrefix} Built the launcher screens on {canvas.name}; services on '{services.name}'. Save the scene to keep them.");
+            Debug.Log($"{LogPrefix} Built the launcher and admin screens on {canvas.name}, the in-scenario menu on '{globalMenu.name}'; services on '{services.name}'. Save the scene to keep them.");
         }
 
         // ---- Screens
@@ -194,6 +207,312 @@ namespace Modules.ScenarioLauncher.Editor
             Set(panel, "menu", menu);
             Set(panel, "detailsText", details);
             return panel;
+        }
+
+        // ---- Admin (five taps on the logo → PIN → admin)
+
+        private static AdminPinPanel BuildAdminPin(Kit kit, LauncherMenu menu)
+        {
+            var screen = NewScreen(kit, "Screen_AdminPin");
+            var panel = screen.gameObject.AddComponent<AdminPinPanel>();
+            Clone(kit.LightBackground, screen, "MainBG_Panel");
+            Clone(kit.Header, screen, "Heading_Panel");
+            Text(kit, screen, "title", "Admin", new Vector2(-156, 440), new Vector2(500, 100), kit.Title.fontSize, Color.white, TextAlignmentOptions.Left);
+
+            Text(kit, screen, "prompt", "Enter the admin PIN", new Vector2(0, 325), new Vector2(800, 50), 34, Ink, TextAlignmentOptions.Center);
+            var box = Clone(kit.Box, screen, "pinBox", new Vector2(0, 235), new Vector2(480, 110));
+            var code = Text(kit, box, "pin", "_ _ _ _", Vector2.zero, new Vector2(460, 110), 64, Ink, TextAlignmentOptions.Center);
+            code.characterSpacing = 10;
+            var error = Text(kit, screen, "error", "", new Vector2(0, 150), new Vector2(820, 70), 26, Bad, TextAlignmentOptions.Center);
+
+            // 1-9, then Clear / 0 / Delete, like a phone.
+            const float keyW = 150, keyH = 90, gap = 15;
+            var keys = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Clear", "0", "Delete" };
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var pos = new Vector2((i % 3 - 1) * (keyW + gap), 50 - (i / 3) * (keyH + gap));
+                var digit = keys[i].Length == 1;
+                var key = MakeButton(kit, screen, "key_" + keys[i], keys[i], pos, new Vector2(keyW, keyH), Key, Ink, digit ? 44 : 30);
+                if (digit)
+                    UnityEventTools.AddStringPersistentListener(key.onClick, panel.Type, keys[i]);
+                else if (keys[i] == "Clear")
+                    UnityEventTools.AddPersistentListener(key.onClick, panel.Clear);
+                else
+                    UnityEventTools.AddPersistentListener(key.onClick, panel.Backspace);
+            }
+
+            var cancel = MakeButton(kit, screen, "Cancel", "Cancel", new Vector2(-130, -400), new Vector2(240, 90), Key, Ink, 34);
+            UnityEventTools.AddPersistentListener(cancel.onClick, panel.Cancel);
+            var enter = MakeButton(kit, screen, "Enter", "Enter", new Vector2(130, -400), new Vector2(240, 90), Green, Color.white, 34);
+            UnityEventTools.AddPersistentListener(enter.onClick, panel.Submit);
+
+            Set(panel, "menu", menu);
+            Set(panel, "pinText", code);
+            Set(panel, "errorText", error);
+            Set(panel, "enterButton", enter);
+            return panel;
+        }
+
+        private static AdminPanel BuildAdmin(Kit kit, LauncherMenu menu)
+        {
+            var screen = NewScreen(kit, "Screen_Admin");
+            var panel = screen.gameObject.AddComponent<AdminPanel>();
+            Clone(kit.LightBackground, screen, "MainBG_Panel");
+            Clone(kit.Header, screen, "Heading_Panel");
+            Text(kit, screen, "title", "Admin", new Vector2(-156, 440), new Vector2(500, 100), kit.Title.fontSize, Color.white, TextAlignmentOptions.Left);
+            Text(kit, screen, "subtitle", "Debug options and headset registration", new Vector2(-56, 388), new Vector2(700, 40), 26, Color.white, TextAlignmentOptions.Left);
+
+            var box = Clone(kit.Box, screen, "detailsBox", new Vector2(0, 170), new Vector2(800, 330));
+            var details = Text(kit, box, "details", "", Vector2.zero, new Vector2(740, 300), 23, Ink, TextAlignmentOptions.TopLeft);
+            var status = Text(kit, screen, "status", "", new Vector2(0, -28), new Vector2(820, 56), 24, Muted, TextAlignmentOptions.Center);
+
+            var register = MakeButton(kit, screen, "RegisterHeadset", "Register headset", new Vector2(0, -112), new Vector2(780, 90), Green, Color.white, 34);
+            UnityEventTools.AddPersistentListener(register.onClick, panel.RegisterHeadset);
+
+            var size = new Vector2(380, 76);
+            var environment = MakeButton(kit, screen, "Environment", "Environment", new Vector2(-200, -205), size, Key, Ink, 26);
+            UnityEventTools.AddPersistentListener(environment.onClick, panel.NextEnvironment);
+            var builtIn = MakeButton(kit, screen, "BuiltInScenarios", "Built-in scenarios", new Vector2(200, -205), size, Key, Ink, 26);
+            UnityEventTools.AddPersistentListener(builtIn.onClick, panel.ToggleBuiltInScenarios);
+            var refresh = MakeButton(kit, screen, "Refresh", "Refresh scenarios", new Vector2(-200, -291), size, Key, Ink, 26);
+            UnityEventTools.AddPersistentListener(refresh.onClick, panel.Refresh);
+            var delete = MakeButton(kit, screen, "DeleteDownloads", "Delete downloads", new Vector2(200, -291), size, Key, Ink, 26);
+            UnityEventTools.AddPersistentListener(delete.onClick, panel.DeleteDownloads);
+            var forget = MakeButton(kit, screen, "ForgetHeadset", "Forget headset", new Vector2(-200, -377), size, Key, Bad, 26);
+            UnityEventTools.AddPersistentListener(forget.onClick, panel.ForgetHeadset);
+            var quit = MakeButton(kit, screen, "QuitApp", "Quit app", new Vector2(200, -377), size, Key, Bad, 26);
+            UnityEventTools.AddPersistentListener(quit.onClick, panel.QuitApp);
+            foreach (var label in new[] { environment, builtIn, refresh, delete, forget, quit }.Select(b => b.GetComponentInChildren<TextMeshProUGUI>()))
+            {
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 16;
+                label.fontSizeMax = 26;
+            }
+
+            var close = MakeButton(kit, screen, "Close", "Close", new Vector2(0, -470), new Vector2(300, 80), Key, Ink, 32);
+            UnityEventTools.AddPersistentListener(close.onClick, panel.Close);
+
+            Set(panel, "menu", menu);
+            Set(panel, "detailsText", details);
+            Set(panel, "statusText", status);
+            Set(panel, "environmentLabel", environment.GetComponentInChildren<TextMeshProUGUI>());
+            Set(panel, "builtInLabel", builtIn.GetComponentInChildren<TextMeshProUGUI>());
+            Set(panel, "forgetLabel", forget.GetComponentInChildren<TextMeshProUGUI>());
+            return panel;
+        }
+
+        private static RegisterHeadsetPanel BuildRegisterHeadset(Kit kit, LauncherMenu menu)
+        {
+            var screen = NewScreen(kit, "Screen_RegisterHeadset");
+            var panel = screen.gameObject.AddComponent<RegisterHeadsetPanel>();
+            Clone(kit.LightBackground, screen, "MainBG_Panel");
+            Clone(kit.Header, screen, "Heading_Panel");
+            Text(kit, screen, "title", "Register Headset", new Vector2(-156, 440), new Vector2(500, 100), kit.Title.fontSize, Color.white, TextAlignmentOptions.Left);
+            var current = Text(kit, screen, "current", "", new Vector2(-56, 388), new Vector2(700, 40), 26, Color.white, TextAlignmentOptions.Left);
+
+            Text(kit, screen, "prompt", "Enter the registration code from the SafeSite dashboard", new Vector2(0, 325), new Vector2(820, 50), 30, Ink, TextAlignmentOptions.Center);
+            var box = Clone(kit.Box, screen, "codeBox", new Vector2(0, 235), new Vector2(720, 110));
+            var code = Text(kit, box, "code", "_ _ _ _ _ _ _ _", Vector2.zero, new Vector2(700, 110), 56, Ink, TextAlignmentOptions.Center);
+            code.characterSpacing = 8;
+            var result = Text(kit, screen, "result", "", new Vector2(0, 148), new Vector2(820, 74), 24, Ink, TextAlignmentOptions.Center);
+
+            // A-Z then 0-9, nine keys a row, then Clear / Delete / Register.
+            const float keyW = 82, keyH = 76, gap = 8;
+            var keys = RegisterHeadsetPanel.Alphabet;
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var col = i % 9;
+                var row = i / 9;
+                var pos = new Vector2(-(8 * (keyW + gap)) / 2 + col * (keyW + gap), 60 - row * (keyH + gap));
+                var key = MakeButton(kit, screen, "key_" + keys[i], keys[i].ToString(), pos, new Vector2(keyW, keyH), Key, Ink, 36);
+                UnityEventTools.AddStringPersistentListener(key.onClick, panel.Type, keys[i].ToString());
+            }
+
+            var lastRow = 60 - 4 * (keyH + gap) - 20;
+            var clear = MakeButton(kit, screen, "Clear", "Clear", new Vector2(-300, lastRow), new Vector2(190, keyH), Key, Ink, 32);
+            UnityEventTools.AddPersistentListener(clear.onClick, panel.Clear);
+            var back = MakeButton(kit, screen, "Delete", "Delete", new Vector2(-100, lastRow), new Vector2(190, keyH), Key, Ink, 32);
+            UnityEventTools.AddPersistentListener(back.onClick, panel.Backspace);
+            var registerButton = MakeButton(kit, screen, "Register", "Register", new Vector2(200, lastRow), new Vector2(390, keyH), Green, Color.white, 36);
+            UnityEventTools.AddPersistentListener(registerButton.onClick, panel.Register);
+
+            var backToAdmin = MakeButton(kit, screen, "Back", "Back", new Vector2(0, -430), new Vector2(300, 80), Key, Ink, 32);
+            UnityEventTools.AddPersistentListener(backToAdmin.onClick, panel.Back);
+
+            Set(panel, "menu", menu);
+            Set(panel, "currentText", current);
+            Set(panel, "codeText", code);
+            Set(panel, "resultText", result);
+            Set(panel, "registerButton", registerButton);
+            Set(panel, "registerLabel", registerButton.GetComponentInChildren<TextMeshProUGUI>());
+            return panel;
+        }
+
+        /// <summary>
+        /// Five taps on the SafeSite logo open the admin PIN: on the splash's logo, and on a small copy of
+        /// it in the header of the login, scenarios and headset screens (the splash only shows briefly).
+        /// </summary>
+        private static void AddAdminUnlocks(Kit kit, LauncherMenu menu, Transform splash, Transform login, Transform select, Transform headset)
+        {
+            if (kit.Logo == null)
+            {
+                Debug.LogWarning($"{LogPrefix} No SafeSiteLogo on the splash: add an AdminUnlock to the logo by hand.");
+                return;
+            }
+
+            Unlock(kit.Logo, menu);
+
+            // Login and headset headers are free on the right; the scenarios header has Refresh/Headset there.
+            HeaderLogo(kit, menu, login, "Logo", new Vector2(355, 456), 130);
+            HeaderLogo(kit, menu, headset, "Logo", new Vector2(355, 456), 130);
+            HeaderLogo(kit, menu, select, Added + "Logo", new Vector2(185, 444), 110);
+        }
+
+        private static void HeaderLogo(Kit kit, LauncherMenu menu, Transform screen, string name, Vector2 position, float size)
+        {
+            var logo = Clone(kit.Logo, screen, name, position, new Vector2(size, size));
+            Unlock(logo.gameObject, menu);
+        }
+
+        private static void Unlock(GameObject logo, LauncherMenu menu)
+        {
+            var graphic = logo.GetComponent<Graphic>();
+            if (graphic != null)
+            {
+                Undo.RecordObject(graphic, "Build Bootstrap Menu");
+                graphic.raycastTarget = true;
+            }
+            var unlock = GetOrAdd<AdminUnlock>(logo);
+            Set(unlock, "menu", menu);
+        }
+
+        // ---- In-scenario menu (left controller menu button)
+
+        /// <summary>
+        /// A world-space canvas of its own at the scene root (the main menu's MenuItems is hidden while
+        /// a scenario plays), with the main menu's canvas setup, panels and buttons.
+        /// </summary>
+        private static GlobalMenu BuildGlobalMenu(Kit kit, LauncherMenu menu)
+        {
+            var root = new GameObject("GlobalMenu");
+            SceneManager.MoveGameObjectToScene(root, kit.Canvas.gameObject.scene);
+            Undo.RegisterCreatedObjectUndo(root, "Build Bootstrap Menu");
+            var globalMenu = root.AddComponent<GlobalMenu>();
+
+            var canvasObject = new GameObject("GlobalMenuCanvas", typeof(RectTransform));
+            canvasObject.layer = kit.Canvas.gameObject.layer;
+            canvasObject.transform.SetParent(root.transform, false);
+            foreach (var component in kit.Canvas.GetComponents<Component>())
+            {
+                if (component is Transform)
+                    continue;
+                // RequireComponent may already have added it (a raycaster adds the Canvas).
+                var copy = canvasObject.GetComponent(component.GetType());
+                if (copy == null)
+                    copy = canvasObject.AddComponent(component.GetType());
+                EditorUtility.CopySerialized(component, copy);
+            }
+            var canvasRect = (RectTransform)canvasObject.transform;
+            canvasRect.sizeDelta = new Vector2(900, 1080);
+            canvasRect.localScale = Vector3.one * 0.001f; // 0.9 m x 1.08 m, opened 1.5 m away
+            canvasRect.localPosition = new Vector3(0, 1.4f, 1.5f);
+
+            var canvasKit = new Kit
+            {
+                Canvas = canvasRect,
+                LightBackground = kit.LightBackground,
+                DarkBackground = kit.DarkBackground,
+                Header = kit.Header,
+                Title = kit.Title,
+                Box = kit.Box,
+                Button = kit.Button,
+                LoadingBar = kit.LoadingBar,
+                Logo = kit.Logo,
+                Tween = kit.Tween,
+            };
+
+            // Main: Resume / Restart / Switch / Exit (playing) or Back to start (main menu).
+            var main = NewScreen(canvasKit, "Screen_Menu");
+            Clone(kit.LightBackground, main, "MainBG_Panel");
+            Clone(kit.Header, main, "Heading_Panel");
+            Text(kit, main, "title", "Menu", new Vector2(-156, 440), new Vector2(500, 100), kit.Title.fontSize, Color.white, TextAlignmentOptions.Left);
+            var subtitle = Text(kit, main, "subtitle", "", new Vector2(-56, 388), new Vector2(700, 40), 26, Color.white, TextAlignmentOptions.Left);
+
+            var buttons = Column(main, "Buttons", new Vector2(0, 20), new Vector2(600, 640), 26);
+            var size = new Vector2(540, 100);
+            var resume = MakeButton(kit, buttons, "Resume", "Resume", Vector2.zero, size, Green, Color.white, 38);
+            UnityEventTools.AddPersistentListener(resume.onClick, globalMenu.Resume);
+            var restart = MakeButton(kit, buttons, "Restart", "Restart scenario", Vector2.zero, size, Key, Ink, 36);
+            UnityEventTools.AddPersistentListener(restart.onClick, globalMenu.Restart);
+            var switchScenario = MakeButton(kit, buttons, "Switch", "Switch scenario", Vector2.zero, size, Key, Ink, 36);
+            UnityEventTools.AddPersistentListener(switchScenario.onClick, globalMenu.ShowSwitch);
+            var exit = MakeButton(kit, buttons, "Exit", "Exit to main menu", Vector2.zero, size, Key, Ink, 36);
+            UnityEventTools.AddPersistentListener(exit.onClick, globalMenu.ExitScenario);
+            var home = MakeButton(kit, buttons, "Home", "Back to start", Vector2.zero, size, Key, Ink, 36);
+            UnityEventTools.AddPersistentListener(home.onClick, globalMenu.Home);
+            Text(kit, main, "hint", "Press the menu button on the left controller to close.", new Vector2(0, -470), new Vector2(800, 50), 24, Muted, TextAlignmentOptions.Center);
+
+            // Switch: the scenarios this headset can play, five to a page.
+            var switchScreen = NewScreen(canvasKit, "Screen_Switch");
+            Clone(kit.LightBackground, switchScreen, "MainBG_Panel");
+            Clone(kit.Header, switchScreen, "Heading_Panel");
+            Text(kit, switchScreen, "title", "Switch Scenario", new Vector2(-156, 440), new Vector2(500, 100), kit.Title.fontSize, Color.white, TextAlignmentOptions.Left);
+            Text(kit, switchScreen, "subtitle", "The current scenario ends and the new one starts.", new Vector2(-56, 388), new Vector2(700, 40), 26, Color.white, TextAlignmentOptions.Left);
+
+            var list = Column(switchScreen, "List", new Vector2(0, 0), new Vector2(740, 620), 16);
+            var item = MakeButton(kit, list, "item_template", "Scenario", Vector2.zero, new Vector2(720, 104), Key, Ink, 32);
+            var itemLabel = item.GetComponentInChildren<TextMeshProUGUI>();
+            itemLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            itemLabel.rectTransform.offsetMin = new Vector2(32, 0);
+            itemLabel.rectTransform.offsetMax = new Vector2(-32, 0);
+            item.gameObject.SetActive(false);
+            var message = Text(kit, switchScreen, "message", "", new Vector2(0, 40), new Vector2(720, 120), 28, Muted, TextAlignmentOptions.Center);
+
+            var previous = MakeButton(kit, switchScreen, "PreviousPage", "<", new Vector2(-330, -380), new Vector2(80, 60), Key, Ink, 34);
+            UnityEventTools.AddPersistentListener(previous.onClick, globalMenu.PreviousPage);
+            var page = Text(kit, switchScreen, "page", "", new Vector2(0, -380), new Vector2(300, 60), 26, Muted, TextAlignmentOptions.Center);
+            var next = MakeButton(kit, switchScreen, "NextPage", ">", new Vector2(330, -380), new Vector2(80, 60), Key, Ink, 34);
+            UnityEventTools.AddPersistentListener(next.onClick, globalMenu.NextPage);
+            var back = MakeButton(kit, switchScreen, "Back", "Back", new Vector2(0, -470), new Vector2(300, 80), Key, Ink, 32);
+            UnityEventTools.AddPersistentListener(back.onClick, globalMenu.ShowMain);
+
+            Set(globalMenu, "launcherMenu", menu);
+            Set(globalMenu, "canvasRoot", canvasObject);
+            Set(globalMenu, "mainScreen", main.gameObject);
+            Set(globalMenu, "switchScreen", switchScreen.gameObject);
+            Set(globalMenu, "subtitleText", subtitle);
+            Set(globalMenu, "restartButton", restart);
+            Set(globalMenu, "switchButton", switchScenario);
+            Set(globalMenu, "exitButton", exit);
+            Set(globalMenu, "homeButton", home);
+            Set(globalMenu, "list", list);
+            Set(globalMenu, "itemTemplate", item);
+            Set(globalMenu, "previousPage", previous);
+            Set(globalMenu, "nextPage", next);
+            Set(globalMenu, "pageText", page);
+            Set(globalMenu, "messageText", message);
+
+            switchScreen.gameObject.SetActive(false);
+            canvasObject.SetActive(false);
+            return globalMenu;
+        }
+
+        /// <summary>A centred column that stacks its active children top to bottom.</summary>
+        private static RectTransform Column(Transform parent, string name, Vector2 position, Vector2 size, float spacing)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.layer = parent.gameObject.layer;
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(parent, false);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = spacing;
+            layout.childControlWidth = layout.childControlHeight = false;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+            Undo.RegisterCreatedObjectUndo(go, "Build Bootstrap Menu");
+            return rect;
         }
 
         /// <summary>Adds the client line, Refresh/Headset buttons, paging and a message line to the designed scenario grid.</summary>
@@ -335,12 +654,15 @@ namespace Modules.ScenarioLauncher.Editor
 
         private static void RemovePrevious(Transform canvas)
         {
-            foreach (var name in new[] { "Screen_Login", "Screen_Progress", "Screen_Headset", "LauncherMenu" })
+            foreach (var name in new[] { "Screen_Login", "Screen_Progress", "Screen_Headset", "Screen_AdminPin", "Screen_Admin", "Screen_RegisterHeadset", "LauncherMenu" })
             {
                 var old = canvas.Find(name);
                 if (old != null)
                     Undo.DestroyObjectImmediate(old.gameObject);
             }
+
+            foreach (var root in canvas.gameObject.scene.GetRootGameObjects().Where(r => r.GetComponent<GlobalMenu>() != null).ToList())
+                Undo.DestroyObjectImmediate(root);
 
             foreach (var child in canvas.GetComponentsInChildren<Transform>(true).Where(t => t.name.StartsWith(Added)).ToList())
             {
