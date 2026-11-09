@@ -1,4 +1,5 @@
 using System.Linq;
+using Modules.SessionAnalyticsService.External;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -52,8 +53,12 @@ namespace Modules.ScenarioLauncher.UI.Menu
 
         public void StartScenario()
         {
-            if (_card != null)
-                menu.Play(_card);
+            if (_card == null)
+                return;
+            // Recorded with the session for the dashboard.
+            if (languageDropdown && _card.Languages.Count > 0 && languageDropdown.value < languageDropdown.options.Count)
+                SessionAnalyticsServiceLocator.FindInScene()?.SetLanguage(languageDropdown.options[languageDropdown.value].text);
+            menu.Play(_card);
         }
 
         public void Back() => menu.ShowScenarios();

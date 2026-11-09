@@ -625,11 +625,14 @@ namespace Modules.ScenarioLauncher.Editor
                 (UnityAction<string>)Delegate.CreateDelegate(typeof(UnityAction<string>), loader, "LoadScenario"));
         }
 
-        /// <summary>The API and launcher services, once per scene, set to Production.</summary>
+        /// <summary>The API, launcher and session analytics services, once per scene, set to Production.</summary>
         private static GameObject EnsureServices()
         {
             if (ScenarioLauncherServiceLocator.FindInScene() is Component existing)
+            {
+                EnsureAnalytics(existing.gameObject);
                 return existing.gameObject;
+            }
 
             var holder = GameObject.Find("--Singletons / Persistant --");
             var services = new GameObject("SafeSite Services");
@@ -647,7 +650,16 @@ namespace Modules.ScenarioLauncher.Editor
             var so = new SerializedObject(launcher);
             so.FindProperty("environmentName").stringValue = "Production";
             so.ApplyModifiedPropertiesWithoutUndo();
+            EnsureAnalytics(services);
             return services;
+        }
+
+        /// <summary>Records scenario sessions and sends heartbeats for the dashboard.</summary>
+        private static void EnsureAnalytics(GameObject services)
+        {
+            var type = TypeNamed("Modules.SessionAnalyticsService.Internal.SessionAnalyticsService");
+            if (type != null && services.GetComponent(type) == null)
+                Undo.AddComponent(services, type);
         }
 
         // ---- Helpers

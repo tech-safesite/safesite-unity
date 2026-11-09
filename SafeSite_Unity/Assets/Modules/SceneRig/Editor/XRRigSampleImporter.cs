@@ -4,7 +4,7 @@ using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
 
-namespace SafeSite.Build.XRRig
+namespace Modules.SceneRig.Editor
 {
     internal static class XRRigSampleImporter
     {

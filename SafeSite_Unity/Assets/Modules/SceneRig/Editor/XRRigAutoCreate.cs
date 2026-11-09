@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-namespace SafeSite.Build.XRRig
+namespace Modules.SceneRig.Editor
 {
     [InitializeOnLoad]
     internal static class XRRigAutoCreate

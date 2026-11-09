@@ -1,6 +1,7 @@
 using System.Linq;
 using Modules.SafeSiteApiService.Editor;
 using Modules.SafeSiteApiService.External;
+using Modules.SceneRig.Editor;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 
@@ -35,7 +36,11 @@ namespace Modules.ScenarioAuthoring.Editor
             }
 
             if (definition.mainScene != null)
+            {
                 CheckScripts(definition, report);
+                // Scenarios load into Bootstrap, which brings the player: a rig of their own breaks that.
+                SceneRigValidator.ValidateScenePath(AssetDatabase.GetAssetPath(definition.mainScene), report.Errors, report.Warnings);
+            }
 
             return report;
         }

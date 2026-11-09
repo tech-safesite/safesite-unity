@@ -12,6 +12,7 @@ using SafeSite.Core.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 using SafeSite.Core.Scenarios;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using Modules.SessionAnalyticsService.External;
 
 namespace SafeSite.Scenarios.FallingObjects
 {
@@ -376,7 +377,8 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private void StartCorrectWayBackAtStart()
         {
-            
+            // Reached the end: the dashboard counts this session as completed.
+            SessionAnalyticsServiceLocator.FindInScene()?.MarkCompleted();
             TrainingScenarioLoader.Instance.UnloadScenario();
         }
 

@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
-namespace SafeSite.Build.XRRig
+namespace Modules.SceneRig.Editor
 {
     internal static class XRRigBuilder
     {
@@ -22,7 +22,7 @@ namespace SafeSite.Build.XRRig
         /// and silently drops the wiring. Prefer this; the sample prefabs are only a fallback for a
         /// project that has not been set up yet.
         /// </summary>
-        private const string ProjectRigPrefabPath = "Assets/Prefabs/XR/SafeSite XR Rig.prefab";
+        public const string ProjectRigPrefabPath = "Assets/Prefabs/XR/SafeSite XR Rig.prefab";
 
         public static bool BuildInScene(Scene scene, bool interactive)
         {
@@ -148,7 +148,7 @@ namespace SafeSite.Build.XRRig
             }
         }
 
-        private static void EnsureEventSystem(Scene scene)
+        internal static void EnsureEventSystem(Scene scene)
         {
             var hasEventSystem = scene.GetRootGameObjects()
                 .Any(go => go.GetComponentInChildren<EventSystem>(true) != null);

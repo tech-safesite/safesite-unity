@@ -1,0 +1,18 @@
+{
+    "name": "Modules.SessionAnalyticsService.Internal",
+    "rootNamespace": "",
+    "references": [
+        "Modules.SessionAnalyticsService.External",
+        "Modules.SafeSiteApiService.External",
+        "Modules.ScenarioLauncher.External"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

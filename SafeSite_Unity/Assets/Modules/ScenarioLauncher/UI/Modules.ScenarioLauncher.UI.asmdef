@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Modules.ScenarioLauncher.External",
+        "Modules.SessionAnalyticsService.External",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.XR.Interaction.Toolkit",

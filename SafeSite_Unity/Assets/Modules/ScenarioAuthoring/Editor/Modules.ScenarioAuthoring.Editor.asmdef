@@ -4,6 +4,7 @@
     "references": [
         "Modules.SafeSiteApiService.External",
         "Modules.SafeSiteApiService.Editor",
+        "Modules.SceneRig.Editor",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
         "Unity.ResourceManager"
