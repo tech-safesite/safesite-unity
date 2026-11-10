@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 
 namespace Modules.SafeSiteApiService.Editor
 {
-    /// <summary>SafeSite > Content Uploader: builds a scenario's Addressables content and publishes it to the backend.</summary>
+    /// <summary>SafeSite > Developer > Content Uploader (tools team only; the scenario team uses SafeSite > Scenarios): builds a scenario's Addressables content and publishes it to the backend.</summary>
     public sealed class ContentUploaderWindow : EditorWindow, IUploadProgress
     {
         private const string LogPrefix = "[SafeSiteContentUploader]";
@@ -45,7 +45,7 @@ namespace Modules.SafeSiteApiService.Editor
         private ScrollView _log;
         private readonly List<VisualElement> _actions = new List<VisualElement>();
 
-        [MenuItem("SafeSite/Content Uploader")]
+        [MenuItem("SafeSite/Developer/Content Uploader")]
         public static void Open() => GetWindow<ContentUploaderWindow>("Content Uploader").minSize = new Vector2(480, 640);
 
         private AdminScenario SelectedScenario =>

@@ -228,20 +228,81 @@ namespace Modules.ScenarioAuthoring.Tests.Editor
                 Assert.That(group.GetAssetEntry(smallGuid), Is.Null, "small textures stay with what uses them");
             }
 
-            Assert.That(lines, Has.Some.Contains("1 large asset(s) into 1 bundle"));
+            Assert.That(lines, Has.Some.Contains("1 asset(s) into 1 bundle"));
             Assert.That(settings.GetLabels(), Has.None.StartsWith("safesite-split-"));
             Assert.That(group.GetAssetEntry(largeGuid), Is.Null);
             Assert.That(group.entries.Count, Is.EqualTo(entryCount));
             Assert.That(schema.BundleMode, Is.EqualTo(packing));
         }
 
-        private static Texture2D WriteTexture(string path, int size)
+        [Test]
+        public void ExportSplitsEverythingInAFolderEntryWhateverItsSize()
+        {
+            var definition = ScenarioCreator.Create(Slug, Title, "Tests", "Created by a test.", 5, new[] { "English" });
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            var group = ScenarioGroups.Find(definition);
+
+            // The scenario team's style: the whole folder is one entry.
+            var small = WriteTexture($"{Folder}/Textures/small.png", 64);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            var materialPath = $"{Folder}/Materials/test.mat";
+            AssetDatabase.CreateAsset(material, materialPath);
+            settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(Folder), group, false, false);
+            var smallGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(small));
+            var materialGuid = AssetDatabase.AssetPathToGUID(materialPath);
+            var sceneGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(definition.mainScene));
+            var entryCount = group.entries.Count;
+
+            var candidates = ScenarioGroups.SplitCandidates(settings, group);
+            Assert.That(candidates, Has.Member(materialPath));
+            Assert.That(candidates, Has.Member(AssetDatabase.GetAssetPath(small)), "small assets in a folder entry are packed too");
+            Assert.That(candidates, Has.None.EndsWith(".unity"), "scenes always get their own bundle");
+
+            using (ScenarioGroups.ForExport(definition, group, true, null, 1024 * 1024))
+            {
+                Assert.That(group.GetAssetEntry(smallGuid)?.labels, Has.Some.StartsWith("safesite-split-"));
+                Assert.That(group.GetAssetEntry(materialGuid)?.labels, Has.Some.StartsWith("safesite-split-"));
+                Assert.That(group.GetAssetEntry(sceneGuid).labels, Is.Empty);
+            }
+
+            Assert.That(group.entries.Count, Is.EqualTo(entryCount));
+            Assert.That(settings.GetLabels(), Has.None.StartsWith("safesite-split-"));
+        }
+
+        [Test]
+        public void SizeCheckCapsBigTexturesForHeadsetsOnly()
+        {
+            var definition = ScenarioCreator.Create(Slug, Title, "Tests", "Created by a test.", 5, new[] { "English" });
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            var group = ScenarioGroups.Find(definition);
+            var big = WriteTexture($"{Folder}/Textures/big.png", 4096, false);
+            var path = AssetDatabase.GetAssetPath(big);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.maxTextureSize = 4096;
+            importer.SaveAndReimport();
+            settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(path), group, false, false);
+
+            var report = ScenarioSizeCheck.Run(group, 50L * 1024 * 1024);
+            var issue = report.Issues.Single(i => i.Path == path);
+            Assert.That(issue.FixLabel, Is.Not.Null);
+
+            Assert.That(ScenarioSizeCheck.FixAll(report), Is.EqualTo(report.Fixable.Count()));
+            importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            var android = importer.GetPlatformTextureSettings("Android");
+            Assert.That(android.overridden, Is.True);
+            Assert.That(android.maxTextureSize, Is.EqualTo(ScenarioSizeCheck.HeadsetMaxTextureSize));
+            Assert.That(importer.maxTextureSize, Is.EqualTo(4096), "the Editor/PC copy is unchanged");
+            Assert.That(ScenarioSizeCheck.Run(group, 50L * 1024 * 1024).Issues.Where(i => i.Path == path), Is.Empty);
+        }
+
+        /// <param name="noise">Random pixels (incompressible, so a predictable size); off for big textures that only need their dimensions.</param>
+        private static Texture2D WriteTexture(string path, int size, bool noise = true)
         {
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             var random = new System.Random(size);
             var pixels = new Color32[size * size];
             for (var i = 0; i < pixels.Length; i++)
-                pixels[i] = new Color32((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256), 255);
+                pixels[i] = noise ? new Color32((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256), 255) : new Color32(128, 128, 128, 255);
             texture.SetPixels32(pixels);
             System.IO.File.WriteAllBytes(path, texture.EncodeToPNG());
             Object.DestroyImmediate(texture);

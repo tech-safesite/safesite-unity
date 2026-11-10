@@ -21,4 +21,4 @@ MonoBehaviour:
   languages:
   - English
   mainScene: {fileID: 102900000, guid: 77ee3338abdaaca4d956d87e968943e9, type: 3}
-  lastExportedVersion: 
+  lastExportedVersion: 1.0.2
