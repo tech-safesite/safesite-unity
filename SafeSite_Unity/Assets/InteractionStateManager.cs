@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 
 public class InteractionStateManager : MonoBehaviour
 {
@@ -54,7 +55,25 @@ public class InteractionStateManager : MonoBehaviour
 
     public void SetFar(bool enabled)
     {
-        SetGroup(farInteractors, enabled);
+        foreach (GameObject interactor in farInteractors)
+        {
+            if (interactor == null)
+                continue;
+
+            // A controller's Teleport Interactor belongs to its ControllerInputActionManager, which shows it
+            // only while the thumbstick is pushed forward. Forcing it active here left the teleport ray on
+            // all the time, so allow or block teleporting through that manager instead.
+            var owner = interactor.GetComponentInParent<ControllerInputActionManager>(true);
+            if (owner != null)
+            {
+                owner.enabled = enabled;
+                if (!enabled)
+                    interactor.SetActive(false);
+                continue;
+            }
+
+            interactor.SetActive(enabled);
+        }
     }
 
 

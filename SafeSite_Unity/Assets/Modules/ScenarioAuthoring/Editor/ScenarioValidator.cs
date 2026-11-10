@@ -39,7 +39,7 @@ namespace Modules.ScenarioAuthoring.Editor
             {
                 CheckScripts(definition, report);
                 // Scenarios load into Bootstrap, which brings the player: a rig of their own breaks that.
-                SceneRigValidator.ValidateScenePath(AssetDatabase.GetAssetPath(definition.mainScene), report.Errors, report.Warnings);
+                XRRigMenu.ValidateScenePath(AssetDatabase.GetAssetPath(definition.mainScene), report.Errors, report.Warnings);
             }
 
             return report;

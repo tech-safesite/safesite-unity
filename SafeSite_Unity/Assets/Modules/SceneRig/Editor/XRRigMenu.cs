@@ -1,49 +1,71 @@
+using System.Collections.Generic;
+using Unity.XR.CoreUtils;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Modules.SceneRig.Editor
 {
-    internal static class XRRigMenu
+    /// <summary>
+    /// One button: add the right XR rig prefab to the active scene.
+    ///  - Bootstrap (Assets/_AppCore/Scenes/): --Player--
+    ///  - Scenarios (Assets/_Scenarios/): none. They load into Bootstrap, which brings the player.
+    ///  - Anything else: SafeSite XR Rig.
+    /// </summary>
+    public static class XRRigMenu
     {
-        [MenuItem("Build/XR/Create Rig In Active Scene", priority = 400)]
-        public static void CreateRigInActiveScene()
+        private const string PlayerPrefabPath = "Assets/_AppCore/Player/--Player--.prefab";
+        private const string StandaloneRigPrefabPath = "Assets/Prefabs/XR/SafeSite XR Rig.prefab";
+        private const string AppShellFolder = "Assets/_AppCore/Scenes/";
+        private const string ScenariosFolder = "Assets/_Scenarios/";
+
+        [MenuItem("SafeSite/Add XR Rig To Active Scene")]
+        private static void AddRigToActiveScene()
         {
             var scene = SceneManager.GetActiveScene();
-            var kind = SceneRigValidator.Classify(scene.path);
-            if (kind == SceneRigKind.AppShell || kind == SceneRigKind.Scenario)
+            if (scene.path.StartsWith(ScenariosFolder))
             {
-                // Bootstrap's rig is --Player--, and scenarios have none: the standalone rig is wrong for both.
-                if (EditorUtility.DisplayDialog("XR Rig",
-                        $"'{scene.name}' is a {kind} scene. {SceneRigValidator.Describe(kind)}\n\nOpen Scene Rig to check and fix it instead?",
-                        "Open Scene Rig", "Cancel"))
-                    SceneRigWindow.Open();
+                EditorUtility.DisplayDialog("XR Rig",
+                    "Scenario scenes don't get a rig: they load into Bootstrap, which brings the player.", "OK");
                 return;
             }
-            XRRigBuilder.BuildInScene(scene, interactive: true);
+
+            var prefabPath = scene.path.StartsWith(AppShellFolder) ? PlayerPrefabPath : StandaloneRigPrefabPath;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                Debug.LogError($"[XRRig] Prefab not found at '{prefabPath}'.");
+                return;
+            }
+
+            var rig = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            Undo.RegisterCreatedObjectUndo(rig, "Add XR Rig");
+            EditorSceneManager.MarkSceneDirty(scene);
+            Selection.activeGameObject = rig;
         }
 
-        [MenuItem("Build/XR/Check Scene Rig", priority = 399)]
-        public static void CheckSceneRig() => SceneRigWindow.Open();
-
-        [MenuItem("Build/XR/Import Rig Samples", priority = 401)]
-        public static void ImportSamples()
+        /// <summary>Scenario export check: a scenario scene must not carry its own XR rig.</summary>
+        public static void ValidateScenePath(string scenePath, List<string> errors, List<string> warnings)
         {
-            if (XRRigSampleImporter.EnsureSamplesImported())
-                Debug.Log("[XRRig] Samples ready.");
-        }
+            var scene = SceneManager.GetSceneByPath(scenePath);
+            var opened = !scene.IsValid() || !scene.isLoaded;
+            if (opened)
+                scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
 
-        [MenuItem("Build/XR/Auto-Create Rig On Scene Open", priority = 420)]
-        public static void ToggleAutoCreate()
-        {
-            XRRigAutoCreate.Enabled = !XRRigAutoCreate.Enabled;
-        }
-
-        [MenuItem("Build/XR/Auto-Create Rig On Scene Open", true)]
-        public static bool ToggleAutoCreateValidate()
-        {
-            Menu.SetChecked("Build/XR/Auto-Create Rig On Scene Open", XRRigAutoCreate.Enabled);
-            return true;
+            try
+            {
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    foreach (var origin in root.GetComponentsInChildren<XROrigin>(true))
+                        errors.Add($"Rig: '{origin.name}' is an XR rig. Scenarios load into Bootstrap, which brings the player; remove it.");
+                }
+            }
+            finally
+            {
+                if (opened)
+                    EditorSceneManager.CloseScene(scene, true);
+            }
         }
     }
 }
