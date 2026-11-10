@@ -33,6 +33,7 @@ TagManager:
   - LocoText
   - PassThrough
   - SamplesInfoPanel
+  - HammerHead
   layers:
   - Default
   - TransparentFX
@@ -40,8 +41,8 @@ TagManager:
   - Overlay UI
   - Water
   - UI
-  - 
-  - 
+  - Interactable
+  - Player
   - 
   - 
   - 
