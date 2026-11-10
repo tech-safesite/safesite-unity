@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf8e008252790b43ac0d8bd77edaab3, type: 3}
+  m_Name: Working At Height Voiceover Data
+  m_EditorClassIdentifier: 
+  voiceOverEntries:
+  - id: ladder_intro
+    englishSubtitles: "Hey, there\u2019s a few nails sticking out of the temporary
+      guardrail upstairs, the last lad didn\u2019t do it properly. I need you to
+      grab a ladder and hammer them in."
+    englishAudio: {fileID: 8300000, guid: 86fe4365ef48cc443a46a45f589a6054, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: ladder_teleport
+    englishSubtitles: Teleport to the blue circle you see on the ground.
+    englishAudio: {fileID: 8300000, guid: 12dcbf4034bbd944ab18554952a55ab8, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: ladder_pick_up_ladder
+    englishSubtitles: Bend down and pick up the ladder
+    englishAudio: {fileID: 8300000, guid: 86fe4365ef48cc443a46a45f589a6054, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: ladder_let_go
+    englishSubtitles: Put your hand out and let the ladder go.
+    englishAudio: {fileID: 8300000, guid: 86fe4365ef48cc443a46a45f589a6054, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: ladder_now_climb
+    englishSubtitles: Now climb the ladder
+    englishAudio: {fileID: 8300000, guid: 86fe4365ef48cc443a46a45f589a6054, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: ladder_take_hammer_out
+    englishSubtitles: 'Perfect, now take the hammer out of your tool belt. Your toolbelt
+      is what you see when you look down, reach your hand down and pick-up the hammer. '
+    englishAudio: {fileID: 8300000, guid: 86fe4365ef48cc443a46a45f589a6054, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: ladder_fingers_touch
+    englishSubtitles: 'Make sure all your fingers touch when picking up the hammer. '
+    englishAudio: {fileID: 8300000, guid: 86fe4365ef48cc443a46a45f589a6054, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}

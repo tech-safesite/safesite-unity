@@ -1,5 +1,6 @@
 using Oculus.Interaction;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class NailHitController : MonoBehaviour
 {
@@ -27,6 +28,7 @@ public class NailHitController : MonoBehaviour
     private float hitCooldown = .15f;
     private float lastHitTime;
 
+    public UnityEvent onNailCompleted;
 
     private void OnTriggerEnter(Collider collision)
     {
@@ -78,9 +80,6 @@ public class NailHitController : MonoBehaviour
     private void NailCompleted()
     {
         Debug.Log("Nail fully hammered");
-
-        // Tell scenario controller
-        // Trigger VO
-        // Advance training step
+        onNailCompleted.Invoke();
     }
 }

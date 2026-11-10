@@ -226,9 +226,8 @@ namespace SafeSite.Scenarios.FallingObjects
            // interactionStateManager.SetMode(InteractionStateManager.InteractionMode.ToolUse); // XROrginRig
             VoiceoverHandler.Instance.PlayVoiceOver("grab_drill");
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
-            VoiceoverHandler.Instance.PlayVoiceOver("grab_drill_explanation");
 
-            
+            VoiceoverHandler.Instance.PlayVoiceOver("grab_drill_explanation");
         }
 
         private void StartReturn()
