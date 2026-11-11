@@ -55,16 +55,29 @@ Assets/
 ```
 
 The scenario folder layout (`Animations, Audio, LightingData, Materials, Models, Prefabs, Scenes,
-Scripts, Textures, _temp`) is created by **SafeSite > Scenarios > New scenario**. The scenario's
+Scripts, Textures, _temp`) is created by **SafeSite > Scenarios > New scenario**. A scenario's
+scripts belong in its own `Scripts/` folder, not the `Assets/` root.
+
+**Not part of the architecture** (arrived from `main` on 2026-11-11, to be migrated and deleted;
+don't build on them): `_AppCore/Scenes/Bootstrap_MetaShowcase.unity`, the OVR rig prefabs in
+`_AppCore/Player/`, `_AppCore/Prefabs/TeleportNode_Meta.prefab`, Meta Interaction SDK prefabs in
+scenarios, and `TrainingScenarioLoader.LoadScenarioSingle`. Details in
+[DECISIONS.md](DECISIONS.md#known-issues). The scenario's
 `ScenarioDefinition` asset (`<slug>.asset`) sits at the folder root.
 
 ## 3. The Bootstrap scene is the app
 
-`Assets/_AppCore/Scenes/Bootstrap.unity` is scene 0 of the build. Scenario scenes are loaded
-**additively** into it and unloaded again; Bootstrap is never unloaded. That is why:
+> **This is the final architecture (decided 2026-11-11).** One start scene (Bootstrap), one rig
+> (`--Player--`, XR Interaction Toolkit on OpenXR), every scenario loaded additively on top. Work
+> that doesn't fit it gets migrated, not supported alongside it. See [DECISIONS.md](DECISIONS.md).
 
-- Scenario scenes must **not** contain an XR rig, camera or EventSystem. Export refuses a scene
-  with an `XROrigin` in it.
+`Assets/_AppCore/Scenes/Bootstrap.unity` is scene 0 and the **only** scene in the build. Scenario
+scenes are loaded **additively** into it and unloaded again; Bootstrap is never unloaded or
+replaced. That is why:
+
+- Scenario scenes must **not** contain any rig (XRI `XROrigin` or Meta `OVRCameraRig`), camera or
+  EventSystem. Export refuses a scene with an `XROrigin` in it; the check doesn't catch
+  `OVRCameraRig` yet (known issue).
 - Scenario scripts can rely on Bootstrap's singletons (`ScreenFadeController`, `SafeSiteAudioManager`,
   `InteractionStateManager`, …) being there.
 - Opening a scenario scene on its own in the Editor works for layout, but nothing SafeSite-related
@@ -237,4 +250,8 @@ All per environment, so Production, Demo and Local never mix.
 - Wording shown to people: clients type a **login code**; SafeSite staff use a **registration
   code** (the API calls it an enrollment code). Never "access code" or "set-up code".
 - Edit the `--Player--` prefab, never the Bootstrap copy (see the Player README).
+- Interactions use the XR Interaction Toolkit (XRI grab, sockets, teleport areas/anchors), not
+  the Meta Interaction SDK. Vendor-specific code only behind `VR_META`/`VR_PICO`.
+- Scenarios load additively; never `LoadSceneMode.Single`, never `SceneManager` calls from a
+  scenario.
 - Build APKs with the **Build** menu, never File > Build Settings.

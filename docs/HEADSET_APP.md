@@ -120,6 +120,12 @@ around a scenario, and implements `IScenarioHost` for the module code:
 While a load or unload is running `IsBusy` is true and further requests are ignored. If a load
 fails the menu comes back and the error is shown.
 
+Every scenario loads **additively**; Bootstrap, its rig, services and menus stay loaded the whole
+time. `TrainingScenarioLoader` also has `LoadScenarioSingle` (replaces Bootstrap with the scenario
+scene), added on `main` for the Meta OVR showcase. It isn't part of the app: nothing in
+`Bootstrap.unity` calls it, sessions and the in-scenario menu can't work once Bootstrap is gone,
+and its return path is broken. It is to be removed (see [DECISIONS.md](DECISIONS.md#known-issues)).
+
 ## 5. The in-scenario menu (GlobalMenu)
 
 Opened by the **left controller's menu button**, the **left-hand menu gesture** (palm towards you,

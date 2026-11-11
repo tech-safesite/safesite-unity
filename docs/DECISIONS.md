@@ -30,6 +30,7 @@ would otherwise undo.
 | 2026-11-11 | **One XR rig**: `_AppCore/Player/--Player--.prefab`. The old `Assets/Prefabs/XR` rigs were deleted. Edit the prefab, never the Bootstrap copy (one intended override). | The Bootstrap copy had drifted (36 unapplied overrides), which hid real bugs: backwards controllers, missing hand-aim features, OVRManager auto-recenter. |
 | 2026-11-11 | The headset build tool **owns the OpenXR feature list**; anything not in `HeadsetBuildConfig` is switched off at build time. | Mixed-vendor and missing-feature APKs (0.1.1) only failed on device. |
 | 2026-11-11 | **Content Uploader removed** from Unity; the zip + dashboard import is the only upload path. | Follows from the 2026-10-24 decision; one path to maintain. |
+| 2026-11-11 | **This is the final architecture.** Bootstrap is the only start scene; it owns the one rig (`--Player--`, XR Interaction Toolkit on OpenXR); every scenario, built-in or downloaded, loads **additively** into Bootstrap and never brings a rig, camera or EventSystem. The Meta OVR rig, `Bootstrap_MetaShowcase.unity` and single-mode scenario loading that arrived from `main` the same day are **not part of it** and are to be migrated and removed (see Known issues). | Downloaded scenarios can only work this way: the launcher, analytics, fades and the in-scenario menu all live in Bootstrap, and a package must be loadable on top of it. One rig on OpenXR is also what lets one app build serve Quest and PICO. |
 
 ## Deferred (postponed, not rejected)
 
@@ -53,8 +54,13 @@ would otherwise undo.
 | **Device token stored in PlayerPrefs.** | Test quality; should use the Android Keystore. | `TODO` in `SafeSiteApiService/Internal/DeviceStore.cs` |
 | **Admin PIN lives in the scene** (`7233` in code and Bootstrap). | Change per client build; it keeps trainees out, not attackers. | `AdminPinPanel.pin` |
 | **Built-in scenarios record no sessions.** | Fine for development; don't ship client content as built-in. | `SessionAnalyticsService` follows the launcher only |
-| **Falling Objects reports completion directly** via `SessionAnalyticsServiceLocator…MarkCompleted()` and exits with `TrainingScenarioLoader.Instance.UnloadScenario()`; it has no `SafeSiteScenario` component and reports no score. | Works, but the export validator warns about it, and there's no score in the dashboard. Moving it to `SafeSiteScenario` is a small change in `FallingObjectsScenarioController`. | `_Scenarios/FallingObjects/Scripts/FallingObjectsScenarioController.cs:381` |
-| **Working at Height reports no completion** (no `SafeSiteScenario`, no `MarkCompleted`). | Every session shows "not completed". | `_Scenarios/WorkingAtHeight` |
+| **Scenario scenes contain the Meta OVR rig.** `FallingObjects.unity` and `WorkingAtHeight.unity` each have an `OVRCameraRig Variant` (from `main`, 2026-11-11). | Against the final architecture. Loaded into Bootstrap (the only way a downloaded scenario loads) the headset gets two rigs and two cameras. Remove the rig from both scenes and use `--Player--` features (XRI grab, teleport) instead of Meta Interaction SDK ones. | `_Scenarios/*/Scenes/*.unity` |
+| **The export check doesn't see the OVR rig.** `XRRigMenu.ValidateScenePath` only looks for `XROrigin`; `OVRCameraRig` has none, so both scenarios export without an error. | A broken package can reach the dashboard. Extend the check to `OVRCameraRig`, `OVRManager`, any `Camera` and any `EventSystem`. | `Modules/SceneRig/Editor/XRRigMenu.cs` |
+| **Off-architecture files from `main`:** `_AppCore/Scenes/Bootstrap_MetaShowcase.unity`, `_AppCore/Player/SafesitePlayer_OVRCameraRig.prefab`, `_AppCore/Player/OVRCameraRig Variant.prefab`, `_AppCore/Prefabs/TeleportNode_Meta.prefab`, `ElectricDrill_MetaGrabbable.prefab`, package `com.meta.xr.sdk.interaction.ovr`. | Not used by the app (`Bootstrap.unity` is the only build scene). Keep only until the scenarios are migrated, then delete. Don't build on them. | — |
+| **`TrainingScenarioLoader.LoadScenarioSingle` (single-mode loading)** replaces Bootstrap with the scenario scene. Only `Bootstrap_MetaShowcase` calls it. Its way back, `ReloadBootstrap()`, loads the Addressables key `"Bootstrap"`, which doesn't exist, so leaving the scenario fails. | Against the final architecture; downloaded scenarios can't use it anyway. Remove it together with the showcase scene. | `Assets/TrainingScenarioLoader.cs` |
+| **`SafeSiteMenuController.Start` no longer moves the player to the start point** (line commented out on `main` for the Meta rig). | In Bootstrap the player starts wherever `--Player--` sits until the first scenario ends (`TrainingScenarioLoader` resets it then). Uncomment once the Meta rig work is removed. | `Assets/SafeSiteMenuController.cs` |
+| **Falling Objects reports completion directly** via `SessionAnalyticsServiceLocator…MarkCompleted()` and exits with `TrainingScenarioLoader.Instance.UnloadScenario()`; it has no `SafeSiteScenario` component and reports no score. | Works, but the export validator warns about it, and there's no score in the dashboard. Moving it to `SafeSiteScenario` is a small change in `FallingObjectsScenarioController`. | `_Scenarios/FallingObjects/Scripts/FallingObjectsScenarioController.cs:389` |
+| **Working at Height reports no completion** (no `SafeSiteScenario`, no `MarkCompleted`). Its scripts (`WorkingAtHeightScenarioController.cs`, `NailHitHandler.cs`, `StartSnapped.cs`) sit in the `Assets/` root instead of `_Scenarios/WorkingAtHeight/Scripts/`. | Every session shows "not completed". Outside the scenario folder, the export's "needs an app build" warning doesn't list them. Move them into the scenario's `Scripts/` folder and add `SafeSiteScenario`. | `Assets/WorkingAtHeightScenarioController.cs` |
 | **Login API tests** don't cover the headset limit or suspended/archived clients. | Logic is in SQL and mirrors enroll, but untested on the login path. | web `tests/api_test.ts` |
 | **Local env on a device.** `Local` is `127.0.0.1`, and the dev server binds to `127.0.0.1`. | Device testing against a PC needs manual changes; use Demo. | `SafeSiteEnvironments.asset`, web `scripts/dev_server.ts` |
 | **Legacy launcher UI.** `ScenarioLauncherUI.cs` + `ScenarioLauncherDemo.unity` predate the Bootstrap menu. | Can confuse newcomers; keep for API checks or delete. | `Modules/ScenarioLauncher/UI`, `Demo/` |
@@ -76,9 +82,16 @@ Before this work is "done":
    - set the `IPINFO_TOKEN` secret (free tier works without it, at a low daily limit).
 3. **Web docs:** `docs/unity/UNITY_AGENT_BRIEF.md` still describes the Content Uploader (section 6)
    and enrollment-first sign-in; it now carries a note pointing to the new flow.
-4. Ship an app build (Quest + PICO) with the new rig, menus and location permission before
+4. **Bring the scenarios back to the final architecture** (with Stephen): remove the OVR rig from
+   `FallingObjects.unity` and `WorkingAtHeight.unity`, replace Meta Interaction SDK grabbables and
+   teleport nodes with XRI ones, move Working at Height's scripts into its folder, then delete
+   `Bootstrap_MetaShowcase.unity`, the OVR rig prefabs, `LoadScenarioSingle`/`ReloadBootstrap`,
+   and the `com.meta.xr.sdk.interaction.ovr` package. Restore the player positioning in
+   `SafeSiteMenuController.Start`.
+5. Extend the export's rig check to catch `OVRCameraRig`, cameras and EventSystems.
+6. Ship an app build (Quest + PICO) with the new rig, menus and location permission before
    importing packages whose scenarios rely on new scripts.
-5. Decide on the known issues above, especially licence enforcement and the token store.
+7. Decide on the known issues above, especially licence enforcement and the token store.
 
 ## What changed on this branch
 
@@ -106,7 +119,9 @@ Before this work is "done":
 - **Removed**: Content Uploader and its CLI/secret store; old sample scenarios
   (`Assets/Scenarios/*`) and their groups; `Assets/Prefabs/XR` rigs.
 - **Merged in** from Stephen: hand-tracking teleport, `InteractionStateManager`, Falling Objects
-  scenario, audio/voiceover/subtitle and utility scripts.
+  scenario, audio/voiceover/subtitle and utility scripts. A second merge (`6bb911c`, 2026-11-11)
+  brought Falling Objects voiceovers, the Working at Height scenario, and the Meta OVR rig work
+  listed under Known issues as off-architecture.
 
 `login-code-links-headset` in `safesite-web`: `POST /v1/device/login` + `login_headset` SQL function
 + unique login codes; heartbeat IP-location fallback (`lib/geoip.ts`); `demo-setup` prints only the

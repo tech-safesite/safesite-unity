@@ -71,9 +71,16 @@ overwrite from the package).
 
 Rules for a scenario scene:
 
-- **No XR rig, camera, EventSystem or directional "player" setup of your own.** The scene loads
-  into Bootstrap, which brings `--Player--`. Export fails on an `XROrigin` in the scene. To place
-  the player at the start, use `XRPlayerPositioner.MovePlayerTo(transform)` (on `--Player--/…/Locomotion`).
+- **No rig of any kind, camera, EventSystem or player setup of your own.** That includes Meta's
+  `OVRCameraRig` and the OVR rig prefabs in `_AppCore/Player`. The scene always loads on top of
+  Bootstrap, which brings `--Player--`; a second rig means two cameras and doubled input. Export
+  fails on an `XROrigin`; it doesn't catch `OVRCameraRig` yet, so check by hand. To place the
+  player at the start, use `XRPlayerPositioner.MovePlayerTo(transform)` (on `--Player--/…/Locomotion`).
+- **Interactions use the XR Interaction Toolkit** (`XRGrabInteractable`, `XRSocketInteractor`,
+  `TeleportationArea`/`TeleportationAnchor`), which `--Player--` drives with controllers and hands
+  on both Quest and PICO. Don't use Meta Interaction SDK components (`Grabbable`,
+  `HandGrabInteractable`, `SnapInteractable`, Meta teleport nodes): nothing in the app's rig
+  interacts with them, and they don't run on PICO.
 - **Lighting:** the scenario scene becomes the active scene when loaded, so its lighting settings
   and skybox apply. Bake lighting into the scenario's `LightingData/` folder.
 - **Interaction:** set what the trainee may do with
@@ -81,12 +88,16 @@ Rules for a scenario scene:
   `ToolUse`, `Full`). The app sets `UIAndTeleport` again when the scenario ends. See the Player
   README for what each mode allows.
 - **Teleport targets** must be on the Teleport interaction layer.
-- **Scripts** go in the scenario's `Scripts/` folder. They compile into the app (bundles carry no
-  code), so a headset needs an app build containing them. Keep scripts generic and reusable when
+- **Scripts** go in the scenario's `Scripts/` folder, not the `Assets/` root (the export lists only
+  scripts inside the scenario folder in its "needs an app build" warning). They compile into the app
+  (bundles carry no code), so a headset needs an app build containing them. Keep scripts generic and reusable when
   you can, so new scenarios can ship without a new APK.
 - **Exiting:** never load another scene or call `SceneManager` yourself. Use `SafeSiteScenario`
   (`Exit`, `CompleteAndExit`, `Restart`) or, in existing code, `TrainingScenarioLoader.Instance.UnloadScenario()`;
   both go through the same fade-unload-reset path for downloaded and built-in scenarios.
+- **Loading:** scenarios are always loaded additively. `TrainingScenarioLoader.LoadScenarioSingle`
+  (replace Bootstrap with the scenario) exists only for the off-architecture
+  `Bootstrap_MetaShowcase` scene and is being removed; don't use it.
 
 ## 3. Report score and completion (SafeSiteScenario)
 
@@ -272,7 +283,8 @@ Run on every export, or alone with **Advanced > Validate only**.
 - Details break the API rules (slug, title, category, description, duration, languages, scene).
 - No group, or the main scene isn't in it (fix: **Repair group**).
 - Addressables settings that break the upload rules, checked as they will be during export.
-- The scene contains an XR rig (`XROrigin`).
+- The scene contains an XR rig (`XROrigin`). A Meta `OVRCameraRig` isn't detected yet; check for
+  it by hand until the check is extended.
 
 **Warnings**
 
@@ -309,6 +321,8 @@ naming.
 | "Some files are still over the 50 MB limit after splitting" | One asset is too big on its own. Run **Check sizes**, apply fixes; for video, re-encode. |
 | Validation: "The main scene isn't in group …" | **Advanced > Repair group**. |
 | Validation: "… is an XR rig" | Delete the rig from the scenario scene; Bootstrap brings the player. |
+| Two cameras, doubled hands or rays after loading a scenario | The scene has its own rig, often an `OVRCameraRig` (not caught by validation yet). Delete it. |
+| Grab or teleport does nothing in a scenario | The objects use Meta Interaction SDK components. Replace them with XRI `XRGrabInteractable` / `TeleportationArea`/`TeleportationAnchor` on the Teleport layer. |
 | Headset: "'…' has no 'scenario/main' scene. Re-export it from Unity." | The package was built outside the exporter or with an old tool. Export again. |
 | Scenario loads but a component is missing / "The referenced script is missing" on device | The scenario uses a script the headset's app build doesn't have. Build and install a new APK. |
 | Everything is magenta in the Editor after a download | Expected only if the Editor has no shader of the same name; check the scenario uses URP/project shaders, not ones that exist only in an Android build. |

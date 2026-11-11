@@ -17,6 +17,14 @@ completion through one component (`SafeSiteScenario`); the app records a session
 language, score, completed) and uploads it to the dashboard, offline-safe. A menu on the left
 controller lets the trainee restart, switch or leave a scenario at any time.
 
+## The architecture is fixed
+
+One start scene (`Bootstrap.unity`), one rig (`--Player--`, XR Interaction Toolkit on OpenXR, for
+Quest and PICO), and every scenario loaded additively on top of Bootstrap without a rig of its own.
+This is final. The Meta OVR rig, `Bootstrap_MetaShowcase.unity` and single-mode scenario loading
+that came in from `main` on 2026-11-11 are being migrated out; don't build on them. See
+[docs/DECISIONS.md](docs/DECISIONS.md).
+
 ## Start here
 
 | If you are… | Read |

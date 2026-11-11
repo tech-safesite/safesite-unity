@@ -103,7 +103,8 @@ Scenario packages (Addressables bundles) contain **assets, never code**. So:
 
 ## Build checklist
 
-1. Bootstrap's `ScenarioLauncherService.environmentName` is **Production** (not Local).
+1. `Bootstrap.unity` is the only scene in Build Settings (not `Bootstrap_MetaShowcase`), and
+   Bootstrap's `ScenarioLauncherService.environmentName` is **Production** (not Local).
 2. `AdminPinPanel.pin` in Bootstrap is the PIN you intend to ship.
 3. The `--Player--` instance in Bootstrap has only its one intended override.
 4. Development Build off for client builds (built-in scenarios show only to admins who turn them on).

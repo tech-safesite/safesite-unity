@@ -16,6 +16,14 @@ headset: head, controllers, hands, rays, teleporting and the event system for wo
 
 To add the rig to a new non-scenario scene: **SafeSite > Add XR Rig To Active Scene**.
 
+> **Not the rig:** `SafesitePlayer_OVRCameraRig.prefab` and `OVRCameraRig Variant.prefab` in this
+> folder came from a Meta OVR experiment on `main` (2026-11-11). They are not part of the app's
+> architecture: don't use them in Bootstrap or in a scenario, and don't build on them. They are
+> deleted once the scenarios that still contain them are migrated (see `docs/DECISIONS.md`).
+> The same applies to Meta Interaction SDK components (`Grabbable`, `HandGrabInteractable`,
+> `SnapInteractable`, Meta teleport nodes): use the XR Interaction Toolkit equivalents this rig
+> already supports.
+
 ## What's inside
 
 ```
@@ -112,4 +120,4 @@ mesh. That's expected.**
 | A thumbstick does nothing | That controller's `ControllerInputActionManager` has *Smooth Motion Enabled* on while `Locomotion/Move` is off. Keep Smooth Motion off. |
 | Teleport ray doesn't show | Interaction mode is `None` or `ToolUse`, or the target isn't on the Teleport interaction layer. |
 | Scene jumps when the headset goes back on | Something else is recentering. Only the system and `RecenterHandler` should. OVRManager's own recenter is switched off in `PlatformControllerModel`. |
-| Two rigs / everything doubled | A scenario scene contains a rig. Delete it. |
+| Two rigs / everything doubled | A scenario scene contains a rig (an `XROrigin` or a Meta `OVRCameraRig`). Delete it. |
