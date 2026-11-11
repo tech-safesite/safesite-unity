@@ -22,12 +22,15 @@ namespace Modules.ScenarioLauncher.Internal
     {
         private const string LogPrefix = "[ScenarioLauncherService]";
 
+        /// <summary>The environment an admin picked on this headset; wins over <see cref="environmentName"/>.</summary>
+        private const string EnvironmentOverrideKey = "SafeSite.Launcher.EnvironmentOverride";
+
         [Tooltip("SafeSite environment to use (Local, Demo or Production). Empty keeps the API service's choice.")]
         [SerializeField] private string environmentName = "Local";
 
-        [Tooltip("Derive this device's serial from the login code, so one PC can sign in to several clients " +
-                 "(each client sees it as its own headset). Off: the real device id is used, so the headset " +
-                 "moves to whichever client signs in, as on a real headset.")]
+        [Tooltip("In the Editor and on PCs, derive this device's serial from the login code, so one PC can sign in " +
+                 "to several clients (each client sees it as its own headset). Headsets always use their real device " +
+                 "id, so a headset moves to whichever client signs in.")]
         [FormerlySerializedAs("serialPerSetUpCode"), FormerlySerializedAs("serialPerAccessCode")]
         [SerializeField] private bool serialPerCode = true;
 
@@ -45,6 +48,14 @@ namespace Modules.ScenarioLauncher.Internal
         public string ProgressText { get; private set; }
         public string Error { get; private set; }
 
+        public bool IsBusy => _busy;
+        public bool IsRegistered => _api != null && _api.Store.IsEnrolled;
+        public string HeadsetId => _api?.Store.HeadsetId;
+        public string EnvironmentName => _api?.Environment?.name;
+
+        public IReadOnlyList<string> EnvironmentNames =>
+            _api == null ? (IReadOnlyList<string>)Array.Empty<string>() : _api.Environments.Select(e => e.name).ToList();
+
         public event Action Changed;
 
         /// <summary>Remembers which login code this headset was signed in with, per environment and headset.</summary>
@@ -60,9 +71,28 @@ namespace Modules.ScenarioLauncher.Internal
                 return;
             }
 
-            if (!string.IsNullOrEmpty(environmentName))
-                _api.SetEnvironment(environmentName);
+            var chosen = PlayerPrefs.GetString(EnvironmentOverrideKey, "");
+            if (chosen.Length > 0 && _api.Environments.All(e => e.name != chosen))
+            {
+                PlayerPrefs.DeleteKey(EnvironmentOverrideKey);
+                chosen = "";
+            }
+            if (chosen.Length == 0)
+                chosen = environmentName;
+            if (!string.IsNullOrEmpty(chosen))
+                _api.SetEnvironment(chosen);
             Debug.Log($"{LogPrefix} Using {_api.Environment.name} ({_api.Environment.apiBaseUrl}).");
+
+            await LoadHeadsetAsync();
+        }
+
+        /// <summary>Picks up the current environment's stored headset: signed in from last time, or signed out.</summary>
+        private async Task LoadHeadsetAsync()
+        {
+            ClientName = HeadsetLabel = LicenceStatus = null;
+            Current = null;
+            Error = null;
+            _scenarios = new List<LauncherScenario>();
 
             if (!_api.Store.IsEnrolled)
             {
@@ -199,6 +229,31 @@ namespace Modules.ScenarioLauncher.Internal
             }
         }
 
+        public async Task DownloadAsync(string scenarioId)
+        {
+            var scenario = _scenarios.FirstOrDefault(s => s.Id == scenarioId);
+            if (scenario == null || scenario.IsInstalled || State != LauncherState.Browsing || !Begin(LauncherState.Downloading))
+                return;
+
+            Current = scenario;
+            try
+            {
+                await Download(scenario);
+                Current = null;
+                SetState(LauncherState.Browsing);
+            }
+            catch (Exception e)
+            {
+                Current = null;
+                SetState(LauncherState.Browsing);
+                Fail(Describe(e));
+            }
+            finally
+            {
+                _busy = false;
+            }
+        }
+
         public async Task PlayAsync(string scenarioId)
         {
             var scenario = _scenarios.FirstOrDefault(s => s.Id == scenarioId);
@@ -209,19 +264,7 @@ namespace Modules.ScenarioLauncher.Internal
             try
             {
                 if (!scenario.IsInstalled)
-                {
-                    Progress = 0;
-                    ProgressText = "Starting download…";
-                    Raise();
-                    var progress = new Progress<DownloadProgress>(p =>
-                    {
-                        Progress = p.Fraction;
-                        ProgressText = $"{Mb(p.BytesDone)} of {Mb(p.BytesTotal)}";
-                        Raise();
-                    });
-                    await _api.DownloadScenarioAsync(scenario.Id, progress);
-                    scenario.InstalledVersion = scenario.Version;
-                }
+                    await Download(scenario);
 
                 Progress = 1;
                 ProgressText = "Loading…";
@@ -246,6 +289,21 @@ namespace Modules.ScenarioLauncher.Internal
             }
         }
 
+        private async Task Download(LauncherScenario scenario)
+        {
+            Progress = 0;
+            ProgressText = "Starting download…";
+            Raise();
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                Progress = p.Fraction;
+                ProgressText = $"{Mb(p.BytesDone)} of {Mb(p.BytesTotal)}";
+                Raise();
+            });
+            await _api.DownloadScenarioAsync(scenario.Id, progress);
+            scenario.InstalledVersion = scenario.Version;
+        }
+
         public async Task StopAsync()
         {
             if (State != LauncherState.Playing)
@@ -264,6 +322,139 @@ namespace Modules.ScenarioLauncher.Internal
             Current = null;
             Error = null;
             SetState(LauncherState.SignedOut);
+        }
+
+        // ---- Admin
+
+        public async Task<HeadsetRegistration> RegisterHeadsetAsync(string registrationCode)
+        {
+            var code = Normalise(registrationCode);
+            if (code.Length == 0)
+                return Registration(false, "Enter the registration code.");
+            if (_api == null)
+                return Registration(false, "This scene has no SafeSite API service.");
+            if (_busy || (State != LauncherState.SignedOut && State != LauncherState.Browsing))
+                return Registration(false, "The headset is busy. Try again in a moment.");
+
+            _busy = true;
+            Error = null;
+            try
+            {
+                // The sign-in belongs to the headset's old registration.
+                if (_api.Store.IsEnrolled)
+                    PlayerPrefs.DeleteKey(LoginKey);
+
+                var response = await _api.EnrollAsync(new EnrollRequest
+                {
+                    Code = code,
+                    SerialNumber = SerialFor(code),
+                    Platform = Application.platform == RuntimePlatform.Android ? CurrentAndroidPlatform() : SafeSitePlatforms.Meta,
+                    Model = SystemInfo.deviceModel,
+                    AppVersion = AppVersion(),
+                });
+                ClientName = response.Client?.Name;
+                HeadsetLabel = response.Label;
+                Current = null;
+                _scenarios = new List<LauncherScenario>();
+                Debug.Log($"{LogPrefix} Registered as {HeadsetLabel} for {ClientName}.");
+
+                try
+                {
+                    await SyncAsync();
+                }
+                catch (Exception e)
+                {
+                    // Registered all the same; the config syncs when someone signs in.
+                    Debug.LogWarning($"{LogPrefix} Registered, but the first config sync failed: {e.Message}");
+                }
+
+                // The client's staff sign in with its login code next.
+                SetState(LauncherState.SignedOut);
+                return Registration(true, $"Registered as {HeadsetLabel ?? "a headset"} for {ClientName ?? "the client"}. Sign in with the company's login code to see its scenarios.");
+            }
+            catch (Exception e)
+            {
+                return Registration(false, DescribeRegistration(e));
+            }
+            finally
+            {
+                _busy = false;
+                Raise();
+            }
+        }
+
+        private HeadsetRegistration Registration(bool succeeded, string message)
+        {
+            if (!succeeded)
+                Debug.LogWarning($"{LogPrefix} Registration: {message}");
+            return new HeadsetRegistration { Succeeded = succeeded, Message = message, HeadsetLabel = HeadsetLabel, ClientName = ClientName };
+        }
+
+        public async void SetEnvironment(string name)
+        {
+            if (_api == null || string.IsNullOrEmpty(name) || name == EnvironmentName)
+                return;
+            if (_busy || (State != LauncherState.SignedOut && State != LauncherState.Browsing))
+            {
+                Fail("Finish what the headset is doing before switching environment.");
+                return;
+            }
+
+            try
+            {
+                _api.SetEnvironment(name);
+            }
+            catch (Exception e)
+            {
+                Fail(e.Message);
+                return;
+            }
+            PlayerPrefs.SetString(EnvironmentOverrideKey, name);
+            PlayerPrefs.Save();
+            Debug.Log($"{LogPrefix} Switched to {_api.Environment.name} ({_api.Environment.apiBaseUrl}).");
+            await LoadHeadsetAsync();
+        }
+
+        public void ForgetHeadset()
+        {
+            if (_api == null || _busy || (State != LauncherState.SignedOut && State != LauncherState.Browsing))
+                return;
+            if (_api.Store.IsEnrolled)
+                PlayerPrefs.DeleteKey(LoginKey);
+            _api.ForgetHeadset();
+            ClientName = HeadsetLabel = LicenceStatus = null;
+            Current = null;
+            Error = null;
+            _scenarios = new List<LauncherScenario>();
+            SetState(LauncherState.SignedOut);
+        }
+
+        public int DeleteDownloads()
+        {
+            if (_api == null || _busy || State == LauncherState.Playing || State == LauncherState.Loading || State == LauncherState.Downloading)
+                return 0;
+            var ids = _api.Store.Installed.Select(i => i.ScenarioId).Distinct().ToList();
+            foreach (var id in ids)
+                _api.DeleteLocalScenario(id);
+            foreach (var scenario in _scenarios)
+                scenario.InstalledVersion = null;
+            Debug.Log($"{LogPrefix} Deleted {ids.Count} downloaded scenarios.");
+            Raise();
+            return ids.Count;
+        }
+
+        private static string DescribeRegistration(Exception e)
+        {
+            if (e is ApiError api)
+            {
+                switch (api.Code)
+                {
+                    case ApiErrorCodes.InvalidCode: return "That registration code isn't right, has been used up or has expired. Make a new one in the dashboard.";
+                    case ApiErrorCodes.SerialInUse: return "This headset is already registered to another company. Remove it in the dashboard first.";
+                    case ApiErrorCodes.InvalidRequest: return $"The registration was refused: {api.ErrorMessage}";
+                }
+            }
+            return Describe(e);
         }
 
         /// <summary>Syncs the config and returns the current one (the cached copy when unchanged).</summary>
@@ -288,11 +479,13 @@ namespace Modules.ScenarioLauncher.Internal
                 .Select(s => new LauncherScenario
                 {
                     Id = s.Id,
+                    Slug = s.Slug,
                     Title = s.Title,
                     Category = s.Category,
                     Description = s.Description,
                     DurationMinutes = s.DurationMinutes,
                     Version = s.Version,
+                    Languages = s.Languages?.ToList() ?? new List<string>(),
                     InstalledVersion = _api.Store.GetInstalledVersion(s.Id),
                 })
                 .ToList();
@@ -364,7 +557,7 @@ namespace Modules.ScenarioLauncher.Internal
         private string SerialFor(string code)
         {
             var device = SystemInfo.deviceUniqueIdentifier;
-            if (!serialPerCode)
+            if (!serialPerCode || Application.platform == RuntimePlatform.Android)
                 return device;
             using var sha = SHA256.Create();
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(device + ":" + Normalise(code)));

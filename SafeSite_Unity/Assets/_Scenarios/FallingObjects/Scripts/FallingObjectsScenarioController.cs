@@ -12,6 +12,7 @@ using SafeSite.Core.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 using SafeSite.Core.Scenarios;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using Modules.SessionAnalyticsService.External;
 using Oculus.Interaction;
 
 namespace SafeSite.Scenarios.FallingObjects
@@ -33,13 +34,7 @@ namespace SafeSite.Scenarios.FallingObjects
         private Transform PlayerRig; // Add Auto grabber
 
         [SerializeField]
-
         private OVRCameraRig playerOVRRig;
-
-     //   [SerializeField]
-      //  private XROrigin playerXROrigin; // Add Auto grabber
-
-        
 
         [SerializeField]
         private InteractionStateManager interactionStateManager;
@@ -132,10 +127,9 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private void Awake()
         {
-            //socketWrapper = FindAnyObjectByType<InteractableUnityEventWrapper>();
-
-           // interactionStateManager = FindFirstObjectByType<InteractionStateManager>(
-          //  FindObjectsInactive.Include);
+            // Null on the Meta OVR rig, which has no InteractionStateManager; SetInteractionMode skips it.
+            interactionStateManager = FindFirstObjectByType<InteractionStateManager>(
+            FindObjectsInactive.Include);
         }
 
         private void OnDestroy()
@@ -145,8 +139,11 @@ namespace SafeSite.Scenarios.FallingObjects
         }
         private void Start()
         {
-            playerOVRRig = FindAnyObjectByType<OVRCameraRig>();
-            PlayerRig = playerOVRRig.transform;
+            // Works on either rig: the Meta OVR rig if the scene has one, else the serialized PlayerRig.
+            if (playerOVRRig == null)
+                playerOVRRig = FindAnyObjectByType<OVRCameraRig>();
+            if (playerOVRRig != null)
+                PlayerRig = playerOVRRig.transform;
 
             VoiceoverHandler.Instance.SetVoiceOverData(fallingObjectsVoiceoverData);
             SetCurrentScenarioState(currentState);
@@ -209,7 +206,7 @@ namespace SafeSite.Scenarios.FallingObjects
 
             VoiceoverHandler.Instance.PlayVoiceOver("intro", IntroFinished);
 
-           // interactionStateManager.SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
+            SetInteractionMode(InteractionStateManager.InteractionMode.UIAndTeleport);
         }
 
         private IEnumerator StartTeleportToDrill()
@@ -223,7 +220,7 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private IEnumerator StartPickUpDrill()
         {
-           // interactionStateManager.SetMode(InteractionStateManager.InteractionMode.ToolUse); // XROrginRig
+            SetInteractionMode(InteractionStateManager.InteractionMode.ToolUse);
             VoiceoverHandler.Instance.PlayVoiceOver("grab_drill");
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
@@ -235,7 +232,7 @@ namespace SafeSite.Scenarios.FallingObjects
             VoiceoverHandler.Instance.PlayVoiceOver("return_way");
             middleAccidentNode.SetActive(true);
             craneController.CraneAccidentMovement();
-          //  interactionStateManager.SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
+            SetInteractionMode(InteractionStateManager.InteractionMode.UIAndTeleport);
 
         }
 
@@ -388,8 +385,15 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private void StartCorrectWayBackAtStart()
         {
-            
+            // Reached the end: the dashboard counts this session as completed.
+            SessionAnalyticsServiceLocator.FindInScene()?.MarkCompleted();
             TrainingScenarioLoader.Instance.UnloadScenario();
+        }
+
+        private void SetInteractionMode(InteractionStateManager.InteractionMode mode)
+        {
+            if (interactionStateManager != null)
+                interactionStateManager.SetMode(mode);
         }
 
         ////////// Public for External Calls / Events

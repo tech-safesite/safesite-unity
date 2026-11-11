@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using Modules.SafeSiteApiService.Editor;
 using Modules.SafeSiteApiService.External;
 using UnityEditor;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 
@@ -23,17 +24,29 @@ namespace Modules.ScenarioAuthoring.Editor
         private static readonly string StagingRoot = Path.GetFullPath("Library/SafeSiteScenarioPackages");
         private static readonly string[] KnownPlatforms = { "meta", "pico" };
 
-        /// <returns>The full path of the written zip.</returns>
-        public static string Export(ScenarioDefinition definition, string version, IReadOnlyList<string> platforms, Action<string> log)
+        /// <summary>Rebuilds after the first (24 MB → 12 → 6 MB bundles) when a file comes out over the limit.</summary>
+        private const int MaxRetries = 2;
+
+        public sealed class ExportResult
+        {
+            public string ZipPath;
+            public string Version;
+            public List<string> Platforms;
+            public int FileCount;
+            public long TotalBytes;
+            public long LargestFileBytes;
+        }
+
+        public static ExportResult Export(ScenarioDefinition definition, string version, IReadOnlyList<string> platforms, Action<string> log)
         {
             log ??= _ => { };
             if (!SafeSiteTime.IsVersion(version))
-                throw new UploadFailedException($"Version '{version}' isn't x.y.z.");
+                throw new ContentBuildException($"Version '{version}' isn't x.y.z.");
             if (platforms == null || platforms.Count == 0)
-                throw new UploadFailedException("Select at least one platform.");
+                throw new ContentBuildException("Select at least one platform.");
             var unknown = platforms.Where(p => !KnownPlatforms.Contains(p)).ToList();
             if (unknown.Count > 0)
-                throw new UploadFailedException("Unknown platform: " + string.Join(", ", unknown));
+                throw new ContentBuildException("Unknown platform: " + string.Join(", ", unknown));
 
             // The Addressables build unloads assets, which destroys this reference; reload it by path afterwards.
             var definitionPath = AssetDatabase.GetAssetPath(definition);
@@ -44,7 +57,7 @@ namespace Modules.ScenarioAuthoring.Editor
             foreach (var line in validation.Lines)
                 log(line);
             if (!validation.Ok)
-                throw new UploadFailedException("Validation failed; fix the errors above.");
+                throw new ContentBuildException("Validation failed; fix the errors above.");
 
             var staging = Path.Combine(StagingRoot, slug);
             if (Directory.Exists(staging))
@@ -67,48 +80,33 @@ namespace Modules.ScenarioAuthoring.Editor
             };
 
             var maxFileBytes = SafeSiteUploadSettings.LoadOrCreate().MaxFileBytes;
-            var hooks = ContentUploadPipeline.FindHooks();
+            var hooks = SafeSitePlatformBuildHooks.Find();
             if (hooks.Count == 0 && platforms.Count > 1)
                 log("No ISafeSitePlatformBuildHook found: building once and packaging the same output for every platform.");
 
-            List<BuildFile> shared = null;
-            foreach (var platform in platforms)
+            // If a file still comes out over the limit, build again with smaller bundles before giving up.
+            var binBytes = ScenarioGroups.SplitBundleBytes;
+            for (var attempt = 1; ; attempt++)
             {
-                List<BuildFile> files;
-                if (hooks.Count > 0)
+                if (attempt > 1)
                 {
-                    log($"[{platform}] Running {hooks.Count} platform hook(s) and building.");
-                    foreach (var hook in hooks)
-                        hook.BeforeContentBuild(platform);
-                    try
-                    {
-                        files = AddressablesContentBuilder.Build(version, true, log, group);
-                    }
-                    finally
-                    {
-                        foreach (var hook in hooks)
-                            hook.AfterContentBuild(platform);
-                    }
+                    // The last build unloaded these; load them again by path.
+                    definition = AssetDatabase.LoadAssetAtPath<ScenarioDefinition>(definitionPath);
+                    group = ScenarioGroups.Find(definition);
                 }
-                else
-                {
-                    files = shared ??= AddressablesContentBuilder.Build(version, true, log, group);
-                }
-
-                var output = AddressablesValidator.ValidateOutput(files, maxFileBytes);
-                foreach (var line in output.Lines)
-                    log(line);
-                if (!output.Ok)
-                    throw new UploadFailedException("Build output breaks the upload rules; see above.");
-
-                // Copy now: the next platform's clean build deletes the build folder.
-                foreach (var file in files)
-                {
-                    var target = Path.Combine(staging, platform, file.Path);
-                    Directory.CreateDirectory(Path.GetDirectoryName(target));
-                    File.Copy(file.FullPath, target, true);
-                    manifest.Files.Add(new PackageFile { Platform = platform, Path = file.Path, SizeBytes = file.SizeBytes, Sha256 = Sha256Of(target) });
-                }
+                var oversized = BuildPlatforms(definition, group, version, platforms, hooks, binBytes, maxFileBytes, staging, manifest, log);
+                if (oversized.Count == 0)
+                    break;
+                var list = string.Join(", ", oversized.Select(f => $"{f.Path} ({Mb(f.SizeBytes)})"));
+                if (attempt > MaxRetries)
+                    throw new ContentBuildException(
+                        $"Some files are still over the {maxFileBytes / (1024 * 1024)} MB limit after splitting into {binBytes / (1024 * 1024)} MB bundles: {list}. " +
+                        "Usually one asset is too big on its own: run 'Check sizes' and use its fixes, then build again.");
+                binBytes /= 2;
+                log($"Warning: {list} came out over the {maxFileBytes / (1024 * 1024)} MB limit. Building again with {binBytes / (1024 * 1024)} MB bundles.");
+                manifest.Files.Clear();
+                Directory.Delete(staging, true);
+                Directory.CreateDirectory(staging);
             }
 
             File.WriteAllText(Path.Combine(staging, ScenarioPackageManifest.FileName), manifest.ToJson());
@@ -122,10 +120,75 @@ namespace Modules.ScenarioAuthoring.Editor
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssetIfDirty(definition);
 
-            var bytes = manifest.Files.Sum(f => f.SizeBytes);
-            log($"Exported {manifest.Files.Count} files ({bytes / (1024.0 * 1024.0):0.00} MB) for {string.Join(" + ", platforms)} to {zipPath}");
-            return zipPath;
+            var result = new ExportResult
+            {
+                ZipPath = zipPath,
+                Version = version,
+                Platforms = platforms.ToList(),
+                FileCount = manifest.Files.Count,
+                TotalBytes = manifest.Files.Sum(f => f.SizeBytes),
+                LargestFileBytes = manifest.Files.Count == 0 ? 0 : manifest.Files.Max(f => f.SizeBytes),
+            };
+            log($"Exported {result.FileCount} files ({Mb(result.TotalBytes)}) for {string.Join(" + ", platforms)} to {zipPath}");
+            return result;
         }
+
+        /// <summary>Builds once per platform into the staging folder.</summary>
+        /// <returns>Files over <paramref name="maxFileBytes"/> (empty when the build is good).</returns>
+        private static List<BuildFile> BuildPlatforms(ScenarioDefinition definition, AddressableAssetGroup group, string version,
+            IReadOnlyList<string> platforms, IReadOnlyList<ISafeSitePlatformBuildHook> hooks, long binBytes, long maxFileBytes,
+            string staging, ScenarioPackageManifest manifest, Action<string> log)
+        {
+            // The group's own address and paths (used to test in the app) come back after the build.
+            List<BuildFile> shared = null;
+            using (ScenarioGroups.ForExport(definition, group, true, log, binBytes))
+            {
+                foreach (var platform in platforms)
+                {
+                    List<BuildFile> files;
+                    if (hooks.Count > 0)
+                    {
+                        log($"[{platform}] Running {hooks.Count} platform hook(s) and building.");
+                        foreach (var hook in hooks)
+                            hook.BeforeContentBuild(platform);
+                        try
+                        {
+                            files = AddressablesContentBuilder.Build(version, true, log, group);
+                        }
+                        finally
+                        {
+                            foreach (var hook in hooks)
+                                hook.AfterContentBuild(platform);
+                        }
+                    }
+                    else
+                    {
+                        files = shared ??= AddressablesContentBuilder.Build(version, true, log, group);
+                    }
+
+                    var oversized = files.Where(f => f.SizeBytes > maxFileBytes).ToList();
+                    var output = AddressablesValidator.ValidateOutput(files.Where(f => f.SizeBytes <= maxFileBytes), maxFileBytes);
+                    foreach (var line in output.Lines)
+                        log(line);
+                    if (!output.Ok)
+                        throw new ContentBuildException("Build output breaks the upload rules; see above.");
+                    if (oversized.Count > 0)
+                        return oversized;
+
+                    // Copy now: the next platform's clean build deletes the build folder.
+                    foreach (var file in files)
+                    {
+                        var target = Path.Combine(staging, platform, file.Path);
+                        Directory.CreateDirectory(Path.GetDirectoryName(target));
+                        File.Copy(file.FullPath, target, true);
+                        manifest.Files.Add(new PackageFile { Platform = platform, Path = file.Path, SizeBytes = file.SizeBytes, Sha256 = Sha256Of(target) });
+                    }
+                }
+            }
+            return new List<BuildFile>();
+        }
+
+        public static string Mb(long bytes) => $"{bytes / (1024.0 * 1024.0):0.0} MB";
 
         /// <summary>Bundles are already compressed, so they're written without recompressing; scenario.json and catalogs are deflated.</summary>
         private static void WriteZip(string staging, ScenarioPackageManifest manifest, string zipPath)

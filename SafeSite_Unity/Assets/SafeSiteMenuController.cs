@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class SafeSiteMenuController : MonoBehaviour
@@ -25,6 +26,10 @@ public class SafeSiteMenuController : MonoBehaviour
     private float noiseAmount = 0.01f;
     [SerializeField]
     private float noiseSpeed = 4f;
+
+    [Tooltip("Runs when the loading bar finishes, instead of showing the scenario selection (e.g. LauncherMenu.ShowStart).")]
+    [SerializeField]
+    private UnityEvent onLoadingFinished = new UnityEvent();
 
     void Start()
     {
@@ -91,6 +96,9 @@ public class SafeSiteMenuController : MonoBehaviour
 
         yield return new WaitForSeconds(.5f);
 
-        ShowScenarioSelectionMenu();
+        if (onLoadingFinished.GetPersistentEventCount() > 0)
+            onLoadingFinished.Invoke();
+        else
+            ShowScenarioSelectionMenu();
     }
 }

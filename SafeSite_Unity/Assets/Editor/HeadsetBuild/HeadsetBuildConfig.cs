@@ -100,6 +100,8 @@ namespace SafeSite.Build.Headset
             "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile",
             "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile",
             "UnityEngine.XR.Hands.OpenXR.HandTracking",
+            "UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim",
+            "UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile",
             "UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature",
         };
 
@@ -119,6 +121,10 @@ namespace SafeSite.Build.Headset
                 "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile",
                 "UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile",
                 "UnityEngine.XR.Hands.OpenXR.HandTracking",
+                // The hand rays' aim pose. Without these the hand Aim Pose has no source on device and
+                // the hand rays point in arbitrary directions.
+                "UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim",
+                "UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile",
                 "UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature",
             },
             disabledFeatureTypeNames = MetaArFoundationFeatures,
@@ -141,6 +147,7 @@ namespace SafeSite.Build.Headset
                 "UnityEngine.XR.OpenXR.Features.Interactions.PICO4UltraControllerProfile",
                 "UnityEngine.XR.OpenXR.Features.Interactions.PICOG3ControllerProfile",
                 "UnityEngine.XR.Hands.OpenXR.HandTracking",
+                "UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile",
                 "UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature",
             },
             disabledFeatureTypeNames = MetaArFoundationFeatures,

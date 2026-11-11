@@ -14,57 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: Default Local Group
   m_GUID: 8bb30977cbd7fe848aba9575c7cb2ac3
-  m_SerializeEntries:
-  - m_GUID: 160fb30d65c68ee44b106ea127356f69
-    m_Address: Assets/_Scenarios/FallingObjects/Prefabs
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2da98ee99fe7fa24bb2334965992adc7
-    m_Address: Assets/_Scenarios/FallingObjects/Scenes
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 338c1fbb7476c1a42bdc5223cc5dfbd6
-    m_Address: Assets/_Scenarios/FallingObjects/Models
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 577b6faf755adfc4291bffdd7ff9e169
-    m_Address: Assets/_Scenarios/FallingObjects
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6dd01111776cb3642b985c14eec75d2a
-    m_Address: Assets/_Scenarios/FallingObjects/Audio
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 86e40704466240d4795dad503471d27a
-    m_Address: Assets/_Scenarios/FallingObjects/Animations
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 96bcb4b233c7dd0469728f949a2b5960
-    m_Address: Assets/_Scenarios/FallingObjects/Lighting Data
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 99d68c6303ab16740a723f28654bc514
-    m_Address: Assets/_Scenarios/FallingObjects/Scripts
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a08ef00d97f06294792edff0f6f449a7
-    m_Address: Assets/_Scenarios/FallingObjects/Textures
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: fa5803ba1d881e54b8a46875637175f8
-    m_Address: Assets/_Scenarios/FallingObjects/Materials
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 431939f064b74df47b196855605b862b, type: 2}
   m_SchemaSet:

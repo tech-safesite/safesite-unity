@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: SafeSiteUploadSettings
   m_EditorClassIdentifier: 
   environment: Demo
-  selections: []
+  selections:
+  - environment: Production
+    scenarioId: 577c2fc1-5c6e-462d-b4cb-58592567a36c
+    lastUploadedVersion: 
   meta: 1
   pico: 1
   cleanBuild: 1

@@ -1,0 +1,17 @@
+{
+    "name": "Modules.ScenarioKit",
+    "rootNamespace": "",
+    "references": [
+        "Modules.SessionAnalyticsService.External",
+        "Modules.ScenarioLauncher.External"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

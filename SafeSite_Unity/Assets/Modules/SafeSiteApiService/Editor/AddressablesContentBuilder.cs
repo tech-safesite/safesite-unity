@@ -10,9 +10,24 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
 namespace Modules.SafeSiteApiService.Editor
 {
+    /// <summary>One file of a content build: its path relative to the build folder, full path and size.</summary>
+    [Serializable]
+    public struct BuildFile
+    {
+        public string Path;
+        public string FullPath;
+        public long SizeBytes;
+    }
+
+    /// <summary>An expected failure with a message for the developer (bad input, failed build); shown without a stack trace.</summary>
+    public sealed class ContentBuildException : Exception
+    {
+        public ContentBuildException(string message, Exception inner = null) : base(message, inner) { }
+    }
+
     /// <summary>
     /// Builds Addressables content into the remote build folder and lists the files of that build.
-    /// Shared by the Content Uploader (whole project) and the scenario package exporter (one group).
+    /// Used by the scenario package exporter (SafeSite > Scenarios), one group at a time.
     /// </summary>
     public static class AddressablesContentBuilder
     {
@@ -32,7 +47,7 @@ namespace Modules.SafeSiteApiService.Editor
         {
             log ??= _ => { };
             var settings = AddressableAssetSettingsDefaultObject.Settings
-                           ?? throw new UploadFailedException("No Addressables settings. Run 'Fix Addressables settings' first.");
+                           ?? throw new ContentBuildException("No Addressables settings. Run 'Fix Addressables settings' first.");
             var folder = RemoteBuildFolder();
 
             var previousVersion = settings.OverridePlayerVersion;
@@ -64,10 +79,11 @@ namespace Modules.SafeSiteApiService.Editor
                         Directory.Delete(folder, true);
                 }
 
+                ExpandFolderEntries(settings);
                 log("Building Addressables content (catalog_" + version + ").");
                 AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result);
                 if (!string.IsNullOrEmpty(result.Error))
-                    throw new UploadFailedException("Addressables build failed: " + result.Error);
+                    throw new ContentBuildException("Addressables build failed: " + result.Error);
 
                 var files = FilesOf(result, folder, version, log);
                 log($"Built {files.Count} files ({files.Sum(f => f.SizeBytes) / (1024.0 * 1024.0):0.00} MB) in {folder}");
@@ -85,6 +101,24 @@ namespace Modules.SafeSiteApiService.Editor
                     settings.DefaultGroup = previousDefault;
                 settings.OverridePlayerVersion = previousVersion;
                 EditorUtility.SetDirty(settings);
+            }
+        }
+
+        /// <summary>
+        /// Folder entries list their contents lazily, and the build reads that list for every group, built
+        /// or not: a folder no one has expanded since the Editor started makes the build throw a
+        /// NullReferenceException. Expanding them first avoids it.
+        /// </summary>
+        private static void ExpandFolderEntries(AddressableAssetSettings settings)
+        {
+            var scratch = new List<AddressableAssetEntry>();
+            foreach (var group in settings.groups.Where(g => g != null))
+            {
+                foreach (var entry in group.entries.Where(e => e != null && e.IsFolder && e.SubAssets == null))
+                {
+                    scratch.Clear();
+                    entry.GatherAllAssets(scratch, false, true, true);
+                }
             }
         }
 
