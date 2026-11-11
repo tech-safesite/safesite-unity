@@ -5,6 +5,8 @@
         "Modules.SafeSiteApiService.External",
         "Modules.SafeSiteApiService.Editor",
         "Modules.SceneRig.Editor",
+        "Modules.ScenarioKit",
+        "Modules.ScenarioKit.Editor",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
         "Unity.ResourceManager"

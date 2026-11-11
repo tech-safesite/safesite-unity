@@ -1,0 +1,16 @@
+{
+    "name": "Modules.ScenarioKit.Samples",
+    "rootNamespace": "",
+    "references": [
+        "Modules.ScenarioKit"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

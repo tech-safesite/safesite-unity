@@ -52,17 +52,9 @@ namespace Modules.ScenarioAuthoring.Editor
         private Foldout _logSection;
         private ScrollView _log;
 
+        /// <summary>The one scenario menu entry: creating, wiring and exporting all live in this window.</summary>
         [MenuItem("SafeSite/Scenarios")]
         public static void Open() => GetWindow<ScenariosWindow>("Scenarios").minSize = new Vector2(460, 600);
-
-        [MenuItem("SafeSite/New Scenario")]
-        public static void OpenNew()
-        {
-            Open();
-            var window = GetWindow<ScenariosWindow>();
-            if (window._newSection != null)
-                window._newSection.value = true;
-        }
 
         private ScenarioDefinition Selected =>
             _scenario == null || _scenario.index < 0 || _scenario.index >= _definitions.Count ? null : _definitions[_scenario.index];
@@ -139,6 +131,11 @@ namespace Modules.ScenarioAuthoring.Editor
             advanced.Add(_groupInfo);
             var advancedRow = Row(advanced);
             advancedRow.Add(new Button(OpenScene) { text = "Open scene" });
+            advancedRow.Add(new Button(AddSafeSiteScenario)
+            {
+                text = "Add SafeSite Scenario",
+                tooltip = "Opens the scene and adds (or selects) the component that reports score and completion to the dashboard.",
+            });
             advancedRow.Add(new Button(() => Guard(() =>
             {
                 var group = ScenarioGroups.Ensure(Selected);
@@ -368,7 +365,7 @@ namespace Modules.ScenarioAuthoring.Editor
             catch (Exception e)
             {
                 Log("ERROR: " + e.Message);
-                if (!(e is UploadFailedException) && !(e is ArgumentException) && !(e is InvalidOperationException))
+                if (!(e is ContentBuildException) && !(e is ArgumentException) && !(e is InvalidOperationException))
                     Debug.LogException(e);
                 var text = errors.Count > 0 && (e.Message.Contains("see above") || e.Message.Contains("errors above"))
                     ? "The build stopped:\n• " + string.Join("\n• ", errors.Distinct())
@@ -519,6 +516,23 @@ namespace Modules.ScenarioAuthoring.Editor
                 EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(definition.mainScene));
         });
 
+        private void AddSafeSiteScenario() => Guard(() =>
+        {
+            var definition = Selected ?? throw new InvalidOperationException("Pick a scenario.");
+            if (definition.mainScene == null)
+                throw new InvalidOperationException("The scenario has no main scene.");
+            var path = AssetDatabase.GetAssetPath(definition.mainScene);
+            var scene = EditorSceneManager.GetSceneByPath(path);
+            if (!scene.isLoaded)
+            {
+                if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                    return;
+                scene = EditorSceneManager.OpenScene(path);
+            }
+            Modules.ScenarioKit.Editor.SafeSiteScenarioEditor.AddTo(scene);
+            Log($"{definition.slug}: SafeSiteScenario is in the scene. Wire Complete into the event at its end, then save the scene.");
+        });
+
         private void Validate() => Guard(() =>
         {
             var definition = Selected ?? throw new InvalidOperationException("Pick a scenario.");
@@ -542,7 +556,7 @@ namespace Modules.ScenarioAuthoring.Editor
             {
                 Log("ERROR: " + e.Message);
                 ShowResult(new HelpBox(e.Message, HelpBoxMessageType.Error));
-                if (!(e is UploadFailedException) && !(e is ArgumentException) && !(e is InvalidOperationException))
+                if (!(e is ContentBuildException) && !(e is ArgumentException) && !(e is InvalidOperationException))
                     Debug.LogException(e);
             }
         }

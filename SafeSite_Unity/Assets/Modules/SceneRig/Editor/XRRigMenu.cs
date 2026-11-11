@@ -8,16 +8,13 @@ using UnityEngine.SceneManagement;
 namespace Modules.SceneRig.Editor
 {
     /// <summary>
-    /// One button: add the right XR rig prefab to the active scene.
-    ///  - Bootstrap (Assets/_AppCore/Scenes/): --Player--
-    ///  - Scenarios (Assets/_Scenarios/): none. They load into Bootstrap, which brings the player.
-    ///  - Anything else: SafeSite XR Rig.
+    /// One button: add the XR rig (--Player--, the project's only rig) to the active scene.
+    /// Scenario scenes (Assets/_Scenarios/) never get one: they load into Bootstrap, which brings
+    /// the player. See Assets/_AppCore/Player/README.md.
     /// </summary>
     public static class XRRigMenu
     {
         private const string PlayerPrefabPath = "Assets/_AppCore/Player/--Player--.prefab";
-        private const string StandaloneRigPrefabPath = "Assets/Prefabs/XR/SafeSite XR Rig.prefab";
-        private const string AppShellFolder = "Assets/_AppCore/Scenes/";
         private const string ScenariosFolder = "Assets/_Scenarios/";
 
         [MenuItem("SafeSite/Add XR Rig To Active Scene")]
@@ -31,11 +28,16 @@ namespace Modules.SceneRig.Editor
                 return;
             }
 
-            var prefabPath = scene.path.StartsWith(AppShellFolder) ? PlayerPrefabPath : StandaloneRigPrefabPath;
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (Object.FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include) != null)
+            {
+                EditorUtility.DisplayDialog("XR Rig", "This scene already has an XR rig.", "OK");
+                return;
+            }
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             if (prefab == null)
             {
-                Debug.LogError($"[XRRig] Prefab not found at '{prefabPath}'.");
+                Debug.LogError($"[XRRig] Prefab not found at '{PlayerPrefabPath}'.");
                 return;
             }
 

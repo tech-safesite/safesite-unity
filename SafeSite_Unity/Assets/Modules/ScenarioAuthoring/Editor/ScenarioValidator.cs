@@ -1,5 +1,8 @@
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Modules.SafeSiteApiService.Editor;
+using Modules.ScenarioKit;
 using Modules.SafeSiteApiService.External;
 using Modules.SceneRig.Editor;
 using UnityEditor;
@@ -38,11 +41,43 @@ namespace Modules.ScenarioAuthoring.Editor
             if (definition.mainScene != null)
             {
                 CheckScripts(definition, report);
+                CheckCompletion(definition, report);
                 // Scenarios load into Bootstrap, which brings the player: a rig of their own breaks that.
                 XRRigMenu.ValidateScenePath(AssetDatabase.GetAssetPath(definition.mainScene), report.Errors, report.Warnings);
             }
 
             return report;
+        }
+
+        /// <summary>
+        /// Without a completion call the dashboard shows every session as not completed. Looks for
+        /// Complete/CompleteAndExit wired in the scene's events, or a call in the scenario's scripts.
+        /// </summary>
+        private static void CheckCompletion(ScenarioDefinition definition, ValidationReport report)
+        {
+            var scenePath = AssetDatabase.GetAssetPath(definition.mainScene);
+            var dependencies = AssetDatabase.GetDependencies(scenePath, true);
+            var hasComponent = dependencies
+                .Where(p => p.EndsWith(".cs"))
+                .Select(AssetDatabase.LoadAssetAtPath<MonoScript>)
+                .Any(s => s != null && s.GetClass() == typeof(SafeSiteScenario));
+
+            var sceneText = File.ReadAllText(scenePath);
+            var wiredInScene = hasComponent && Regex.IsMatch(sceneText, @"m_MethodName: (Complete|CompleteAndExit)\s*$", RegexOptions.Multiline);
+
+            var folder = definition.Folder + "/";
+            var calledInCode = dependencies
+                .Where(p => p.EndsWith(".cs") && p.StartsWith(folder))
+                .Any(p => Regex.IsMatch(File.ReadAllText(p), @"\.(Complete|CompleteAndExit|MarkCompleted)\s*\("));
+
+            if (wiredInScene || calledInCode)
+                return;
+
+            report.Warnings.Add(hasComponent
+                ? "Nothing calls SafeSiteScenario.Complete: every session will show as not completed. " +
+                  "Wire Complete or CompleteAndExit into the event at the scenario's end."
+                : "The scene has no SafeSiteScenario component, and nothing reports completion: every session will show as not completed. " +
+                  "Click Advanced > Add SafeSite Scenario, then wire Complete into the event at the scenario's end.");
         }
 
         /// <summary>

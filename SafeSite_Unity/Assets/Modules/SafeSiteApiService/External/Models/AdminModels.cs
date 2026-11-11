@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Modules.SafeSiteApiService.External
 {
-    // DTOs for the admin endpoints used by the testbench and the Content Uploader (brief section 3.2).
+    // DTOs for the admin endpoints used by the testbench (brief section 3.2).
 
     [Serializable]
     public sealed class AdminClient

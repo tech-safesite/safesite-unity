@@ -41,12 +41,12 @@ namespace Modules.ScenarioAuthoring.Editor
         {
             log ??= _ => { };
             if (!SafeSiteTime.IsVersion(version))
-                throw new UploadFailedException($"Version '{version}' isn't x.y.z.");
+                throw new ContentBuildException($"Version '{version}' isn't x.y.z.");
             if (platforms == null || platforms.Count == 0)
-                throw new UploadFailedException("Select at least one platform.");
+                throw new ContentBuildException("Select at least one platform.");
             var unknown = platforms.Where(p => !KnownPlatforms.Contains(p)).ToList();
             if (unknown.Count > 0)
-                throw new UploadFailedException("Unknown platform: " + string.Join(", ", unknown));
+                throw new ContentBuildException("Unknown platform: " + string.Join(", ", unknown));
 
             // The Addressables build unloads assets, which destroys this reference; reload it by path afterwards.
             var definitionPath = AssetDatabase.GetAssetPath(definition);
@@ -57,7 +57,7 @@ namespace Modules.ScenarioAuthoring.Editor
             foreach (var line in validation.Lines)
                 log(line);
             if (!validation.Ok)
-                throw new UploadFailedException("Validation failed; fix the errors above.");
+                throw new ContentBuildException("Validation failed; fix the errors above.");
 
             var staging = Path.Combine(StagingRoot, slug);
             if (Directory.Exists(staging))
@@ -80,7 +80,7 @@ namespace Modules.ScenarioAuthoring.Editor
             };
 
             var maxFileBytes = SafeSiteUploadSettings.LoadOrCreate().MaxFileBytes;
-            var hooks = ContentUploadPipeline.FindHooks();
+            var hooks = SafeSitePlatformBuildHooks.Find();
             if (hooks.Count == 0 && platforms.Count > 1)
                 log("No ISafeSitePlatformBuildHook found: building once and packaging the same output for every platform.");
 
@@ -99,7 +99,7 @@ namespace Modules.ScenarioAuthoring.Editor
                     break;
                 var list = string.Join(", ", oversized.Select(f => $"{f.Path} ({Mb(f.SizeBytes)})"));
                 if (attempt > MaxRetries)
-                    throw new UploadFailedException(
+                    throw new ContentBuildException(
                         $"Some files are still over the {maxFileBytes / (1024 * 1024)} MB limit after splitting into {binBytes / (1024 * 1024)} MB bundles: {list}. " +
                         "Usually one asset is too big on its own: run 'Check sizes' and use its fixes, then build again.");
                 binBytes /= 2;
@@ -171,7 +171,7 @@ namespace Modules.ScenarioAuthoring.Editor
                     foreach (var line in output.Lines)
                         log(line);
                     if (!output.Ok)
-                        throw new UploadFailedException("Build output breaks the upload rules; see above.");
+                        throw new ContentBuildException("Build output breaks the upload rules; see above.");
                     if (oversized.Count > 0)
                         return oversized;
 

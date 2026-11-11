@@ -108,9 +108,9 @@ namespace Modules.ScenarioAuthoring.Editor
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             var schema = group.GetSchema<BundledAssetGroupSchema>()
-                         ?? throw new UploadFailedException($"Group '{group.Name}' has no Bundled Asset Group schema.");
+                         ?? throw new ContentBuildException($"Group '{group.Name}' has no Bundled Asset Group schema.");
             var entry = group.GetAssetEntry(SceneGuid(definition))
-                        ?? throw new UploadFailedException($"The main scene isn't in group '{group.Name}'.");
+                        ?? throw new ContentBuildException($"The main scene isn't in group '{group.Name}'.");
 
             var restore = new ExportScope(settings, schema, entry);
             ApplyContract(settings, schema);

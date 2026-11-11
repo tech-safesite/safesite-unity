@@ -1,56 +1,21 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace Modules.SafeSiteApiService.Editor
 {
-    /// <summary>Per-project Content Uploader settings. No credentials live here.</summary>
+    /// <summary>
+    /// Per-project content build settings used by the scenario size check and package exporter.
+    /// (The name is kept from the old Content Uploader so the existing settings asset still loads.)
+    /// </summary>
     public sealed class SafeSiteUploadSettings : ScriptableObject
     {
         public const string AssetPath = "Assets/Settings/SafeSite/SafeSiteUploadSettings.asset";
 
-        [Serializable]
-        public sealed class EnvironmentSelection
-        {
-            public string environment;
-            public string scenarioId;
-            public string lastUploadedVersion;
-        }
-
-        public string environment = "Demo";
-        public List<EnvironmentSelection> selections = new List<EnvironmentSelection>();
-
-        [Header("Build options")]
-        public bool meta = true;
-        public bool pico = true;
-        public bool cleanBuild = true;
-        public bool skipUnchangedBundles = true;
-        public bool removeOldFiles = true;
-
-        [Tooltip("Supabase Storage per-file limit (50 MB on the free plan).")]
+        [Tooltip("Supabase Storage per-file limit (50 MB on the free plan). Bigger files are split or flagged.")]
         public int maxFileSizeMb = 50;
 
         public long MaxFileBytes => (long)Mathf.Max(1, maxFileSizeMb) * 1024 * 1024;
-
-        public EnvironmentSelection For(string environmentName)
-        {
-            var selection = selections.Find(s => s.environment == environmentName);
-            if (selection == null)
-            {
-                selection = new EnvironmentSelection { environment = environmentName };
-                selections.Add(selection);
-            }
-
-            return selection;
-        }
-
-        public void Save()
-        {
-            EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssetIfDirty(this);
-        }
 
         public static SafeSiteUploadSettings LoadOrCreate()
         {
