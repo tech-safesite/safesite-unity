@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.XR;
 
 namespace Modules.ScenarioLauncher.UI.Menu
 {
@@ -56,8 +57,11 @@ namespace Modules.ScenarioLauncher.UI.Menu
         [SerializeField] private float heightOffset = -0.1f;
 
         private readonly List<GameObject> _items = new List<GameObject>();
+        private readonly List<XRInputSubsystem> _inputSubsystems = new List<XRInputSubsystem>();
         private IScenarioHost _host;
         private int _page;
+        // Frame of the last recenter; the head pose catches up a frame later.
+        private int _recenteredFrame = -1;
 
         public bool IsOpen => canvasRoot && canvasRoot.activeSelf;
 
@@ -94,6 +98,10 @@ namespace Modules.ScenarioLauncher.UI.Menu
             }
             if (_host != null)
                 _host.Changed += OnHostChanged;
+
+            SubsystemManager.GetSubsystems(_inputSubsystems);
+            foreach (var subsystem in _inputSubsystems)
+                subsystem.trackingOriginUpdated += OnRecentered;
         }
 
         private void OnDisable()
@@ -107,6 +115,22 @@ namespace Modules.ScenarioLauncher.UI.Menu
             }
             if (_host != null)
                 _host.Changed -= OnHostChanged;
+
+            foreach (var subsystem in _inputSubsystems)
+                subsystem.trackingOriginUpdated -= OnRecentered;
+            _inputSubsystems.Clear();
+        }
+
+        /// <summary>The user recentred (or the headset did): an open menu would now be off to the side or behind.</summary>
+        private void OnRecentered(XRInputSubsystem _) => _recenteredFrame = Time.frameCount;
+
+        private void LateUpdate()
+        {
+            if (_recenteredFrame < 0 || Time.frameCount <= _recenteredFrame)
+                return;
+            _recenteredFrame = -1;
+            if (IsOpen)
+                PlaceInFrontOfHead();
         }
 
         private void OnToggle(InputAction.CallbackContext _) => Toggle();

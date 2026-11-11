@@ -46,6 +46,10 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+*.utmp
+
+# Unity Android build temp (Gradle/CMake intermediates)
+/.utmp/
 
 # Unity3D generated meta files
 *.pidb.meta

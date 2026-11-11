@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
+using Modules.DeviceLocationService.External;
 using Modules.SafeSiteApiService.External;
 using Modules.ScenarioLauncher.External;
 using Modules.SessionAnalyticsService.External;
@@ -29,7 +30,14 @@ namespace Modules.SessionAnalyticsService.Internal
         [Tooltip("Seconds after start-up before the first heartbeat, so the launcher has picked its environment.")]
         [SerializeField, Min(0)] private float firstHeartbeatDelaySeconds = 5;
 
+        [Tooltip("Seconds a heartbeat waits for a device location before sending without one (the API then estimates one from the IP).")]
+        [SerializeField, Min(0)] private float locationWaitSeconds = 15;
+
+        [Tooltip("Hours a device fix is still sent after location services stop answering.")]
+        [SerializeField, Min(0)] private float maxFixAgeHours = 6;
+
         private ISafeSiteApiService _api;
+        private IDeviceLocationService _location;
         private IScenarioLauncherService _launcher;
         private LauncherState _lastState;
         private string _language;
@@ -69,6 +77,11 @@ namespace Modules.SessionAnalyticsService.Internal
                 enabled = false;
                 return;
             }
+
+            // Optional: without it (or without a fix) the API places the headset by its IP.
+            _location = DeviceLocationServiceLocator.FindInScene();
+            if (_location == null)
+                Debug.Log($"{LogPrefix} No IDeviceLocationService in the scene; the dashboard map will use IP locations.");
 
             _lastState = _launcher.State;
             _launcher.Changed += OnLauncherChanged;
@@ -259,10 +272,12 @@ namespace Modules.SessionAnalyticsService.Internal
             {
                 var store = _api.Store;
                 _installedSignature = InstalledSignature();
+                var location = await DeviceLocationAsync();
                 var heartbeat = await _api.SendHeartbeatAsync(new HeartbeatRequest
                 {
                     AppVersion = SafeSiteTime.IsVersion(Application.version) ? Application.version : "0.0.0",
                     InstalledScenarios = ReportableInstalled(store),
+                    Location = location,
                 });
                 LastHeartbeat = DateTime.Now;
 
@@ -300,6 +315,39 @@ namespace Modules.SessionAnalyticsService.Internal
             {
                 Raise();
             }
+        }
+
+        /// <summary>
+        /// The headset's own position, waiting at most <see cref="locationWaitSeconds"/> so a slow
+        /// or missing fix never holds up the session upload. Null sends the heartbeat without one,
+        /// and the API falls back to the request IP.
+        /// </summary>
+        private async Task<DeviceLocation> DeviceLocationAsync()
+        {
+            if (_location == null)
+                return null;
+
+            try
+            {
+                var refresh = _location.RefreshAsync();
+                await Task.WhenAny(refresh, Task.Delay(TimeSpan.FromSeconds(locationWaitSeconds)));
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"{LogPrefix} Device location failed: {e.Message}");
+            }
+
+            var fix = _location.LastFix;
+            if (fix == null || DateTimeOffset.UtcNow - fix.Value.RecordedAt > TimeSpan.FromHours(maxFixAgeHours))
+                return null;
+
+            return new DeviceLocation
+            {
+                Lat = fix.Value.Latitude,
+                Lng = fix.Value.Longitude,
+                AccuracyM = fix.Value.AccuracyMeters,
+                RecordedAt = SafeSiteTime.Format(fix.Value.RecordedAt),
+            };
         }
 
         /// <summary>

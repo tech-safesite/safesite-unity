@@ -1,56 +1,34 @@
 using UnityEngine;
+#if VR_META || VR_PICO
+using Unity.XR.CoreUtils;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
+#endif
 
 namespace SafeSite.XR.Controllers
 {
     /// <summary>
-    /// Replaces the generic XRI controller mesh with the vendor-accurate model for the headset this
-    /// build targets. HeadsetBuildPipeline sets VR_META or VR_PICO as an extra scripting define for
-    /// the Android player build only (see HeadsetBuildConfig.extraDefines) - neither symbol exists
-    /// in the Editor, so the generic fallback model stays visible there and in Play Mode testing.
+    /// Swaps the generic XRI controller mesh for the real Quest or PICO controller model on device.
+    /// Sits on "Left/Right Controller Visual"; nothing else needs wiring.
     ///
-    /// Three things had to line up here, and each failed in a distinct, visible way on device:
+    /// HeadsetBuildPipeline defines VR_META or VR_PICO for the Android player build only, so in the
+    /// Editor and Play Mode the generic model stays visible and this component does nothing.
     ///
-    /// 1. Space. modelAnchor must be a direct child of the XR Origin's Camera Offset.
-    ///    TrackedPoseDriver writes localPosition/localRotation from a pose that is already in
-    ///    tracking space, so nesting the anchor under the (also pose-driven) "Left Controller"
-    ///    applied the grip pose on top of the aim pose and threw the mesh far from the hand while
-    ///    the interaction ray stayed correct. PoseDriverValidator now fails the build on that.
-    ///
-    /// 2. Pose. The anchor tracks the OpenXR *grip* pose (devicePose), not the aim/pointer pose the
-    ///    XRI controller object uses, because that is what vendor meshes are authored around.
-    ///
-    /// 3. Convention. The grip pose alone is still not where Meta's mesh belongs - see
-    ///    k_GripToMetaModelOffset below. PICO needs no such correction.
-    ///
-    /// Mirroring is deliberately not involved. "Right Controller Visual" carries a localScale of
-    /// (-1, 1, 1) - the XRI Starter Assets trick for reusing one generic mesh on both hands - which
-    /// is correct for that mesh and left alone. Vendor models are modelled per hand, so they hang
-    /// off modelAnchor, outside the mirrored visual entirely.
+    /// Where the model goes: vendor meshes are authored around the OpenXR grip pose, but the XRI
+    /// "Left/Right Controller" object follows the aim (pointer) pose, and its Controller Visual is
+    /// also turned 180 degrees for the generic mesh. Parenting a vendor mesh there makes it render
+    /// backwards. So at startup this component creates its own grip-pose anchor as a direct child of
+    /// the XR Origin's Camera Offset and parents the vendor model to that. The anchor is shown and
+    /// hidden together with this component, so when XRInputModalityManager switches to hands, the
+    /// vendor controller disappears too.
     /// </summary>
     public class PlatformControllerModel : MonoBehaviour
     {
 #if VR_META
         /// <summary>
-        /// Converts the OpenXR grip pose into the pose Meta's controller meshes are authored around.
-        ///
-        /// OVRCameraRig parents OVRControllerPrefab to an anchor sitting at
-        /// OVRInput.GetLocalControllerPosition/Rotation, and OVRControllerHelper applies no transform
-        /// of its own - it only toggles which mesh is visible. Those OVRInput calls read
-        /// "devicePose/position" and "devicePose/rotation" (devicePose is aliased gripPose in Unity's
-        /// OpenXR bindings) and compose them with the inverse of the offset below, copied verbatim
-        /// from OVRInput.cs (_gripToVrapiOffsetInverse):
-        ///
-        ///     metaMeshPose = gripPose * gripToVrapiOffset.inverse
-        ///
-        /// That offset is a -60 degree rotation about X plus a few centimetres, so a mesh placed at
-        /// the raw grip pose sits at a conspicuously wrong angle. Inverting it here reproduces Meta's
-        /// own placement exactly. It is deliberately derived from Meta's constant rather than pasted
-        /// as pre-multiplied numbers, so the derivation stays checkable, and it is the same for both
-        /// hands - OVRInput applies this one constant to LTouch and RTouch alike.
-        ///
-        /// A static offset is preferred over driving the anchor from OVRInput every frame: the mesh
-        /// and the interaction ray then share one TrackedPoseDriver update and cannot drift apart by
-        /// a frame.
+        /// Meta's meshes are not placed at the raw grip pose: OVRInput applies the inverse of this
+        /// offset (a -60 degree rotation about X plus a few centimetres; _gripToVrapiOffset in
+        /// OVRInput.cs), the same for both hands. Applying it here reproduces Meta's own placement.
         /// </summary>
         private static readonly Matrix4x4 k_GripToMetaModelOffset =
             Matrix4x4.TRS(
@@ -62,12 +40,6 @@ namespace SafeSite.XR.Controllers
         [SerializeField]
         [Tooltip("The generic XRI controller model to hide once a vendor-specific model loads.")]
         private GameObject fallbackModel;
-
-        [SerializeField]
-        [Tooltip("Transform the vendor model is parented to. Must be a direct child of Camera Offset and " +
-                 "driven by the grip (device) pose. Falls back to this transform if unset, which will put " +
-                 "the model in the wrong place.")]
-        private Transform modelAnchor;
 
         [SerializeField]
         [Tooltip("Meta's OVRControllerPrefab - contains meshes for every Touch controller variant and " +
@@ -93,69 +65,125 @@ namespace SafeSite.XR.Controllers
                  "specific runtime still seats the model wrongly.")]
         private Vector3 extraRotationOffset;
 
+#if VR_META || VR_PICO
+        private GameObject gripAnchor;
+#endif
+
 #if VR_META
         /// <summary>
         /// OVRControllerHelper reads OVRInput to decide which Touch mesh to show, and OVRInput is only
-        /// pumped by OVRManager's update loop. OVRManager also expects to be the first OVR object
-        /// alive, so it is created before the scene loads rather than from a MonoBehaviour Awake -
-        /// creating it mid-Awake meant the helper could sample OVRInput before the plugin was ready
-        /// and fall back to the wrong controller model.
+        /// pumped by OVRManager. OVRManager expects to be the first OVR object alive, so it is created
+        /// before the scene loads rather than from Awake.
+        ///
+        /// It is here only to drive the controller meshes. Tracking belongs to the XR Origin, so its
+        /// own recentering is switched off: left on, OVRManager recenters by itself every time the
+        /// headset is put back on, on top of the system's recenter, which moved the app's centre.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureOvrManager()
         {
-            if (Object.FindFirstObjectByType<OVRManager>() != null)
-                return;
+            var manager = Object.FindFirstObjectByType<OVRManager>();
+            if (manager == null)
+            {
+                var host = new GameObject("OVR Manager");
+                DontDestroyOnLoad(host);
+                manager = host.AddComponent<OVRManager>();
+            }
 
-            var host = new GameObject("OVR Manager");
-            DontDestroyOnLoad(host);
-            host.AddComponent<OVRManager>();
+            manager.AllowRecenter = false;
         }
 #endif
 
         private void Awake()
         {
-#if VR_META || VR_PICO
-            var parent = modelAnchor != null ? modelAnchor : transform;
-
-            if (modelAnchor == null)
-            {
-                Debug.LogWarning(
-                    $"[PlatformControllerModel] '{name}' has no modelAnchor assigned; the vendor controller " +
-                    "model will inherit the aim pose and render in the wrong place.", this);
-            }
-#endif
-
 #if VR_META
-            if (questControllerPrefab != null)
-            {
-                var instance = Instantiate(questControllerPrefab, parent, false);
-                ApplyLocalPose(instance.transform, k_GripToMetaModelOffset.GetPosition(),
-                    k_GripToMetaModelOffset.rotation);
+            if (questControllerPrefab == null)
+                return;
 
-                var helper = instance.GetComponentInChildren<OVRControllerHelper>(true);
-                if (helper != null)
-                    helper.m_controller = isLeftHand ? OVRInput.Controller.LTouch : OVRInput.Controller.RTouch;
+            var anchor = CreateGripAnchor();
+            if (anchor == null)
+                return;
 
-                if (fallbackModel != null)
-                    fallbackModel.SetActive(false);
-            }
+            var instance = Instantiate(questControllerPrefab, anchor, false);
+            ApplyLocalPose(instance.transform, k_GripToMetaModelOffset.GetPosition(), k_GripToMetaModelOffset.rotation);
+
+            var helper = instance.GetComponentInChildren<OVRControllerHelper>(true);
+            if (helper != null)
+                helper.m_controller = isLeftHand ? OVRInput.Controller.LTouch : OVRInput.Controller.RTouch;
+
+            if (fallbackModel != null)
+                fallbackModel.SetActive(false);
 #elif VR_PICO
-            if (picoControllerPrefab != null)
-            {
-                // PICO needs no grip-to-model correction: the PICO Touch profile reports one pose for
-                // both grip and aim ("For the PICO Touch device, this is both the grip and the pointer
-                // rotation" - PICO4ControllerProfile), and its controller prefabs are authored to it.
-                var instance = Instantiate(picoControllerPrefab, parent, false);
-                ApplyLocalPose(instance.transform, Vector3.zero, Quaternion.identity);
+            if (picoControllerPrefab == null)
+                return;
 
-                if (fallbackModel != null)
-                    fallbackModel.SetActive(false);
-            }
+            var anchor = CreateGripAnchor();
+            if (anchor == null)
+                return;
+
+            // PICO reports one pose for grip and aim and its prefabs are authored to it: no correction.
+            var instance = Instantiate(picoControllerPrefab, anchor, false);
+            ApplyLocalPose(instance.transform, Vector3.zero, Quaternion.identity);
+
+            if (fallbackModel != null)
+                fallbackModel.SetActive(false);
 #endif
         }
 
 #if VR_META || VR_PICO
+        private void OnEnable()
+        {
+            if (gripAnchor != null)
+                gripAnchor.SetActive(true);
+        }
+
+        private void OnDisable()
+        {
+            if (gripAnchor != null)
+                gripAnchor.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            if (gripAnchor != null)
+                Destroy(gripAnchor);
+        }
+
+        /// <summary>
+        /// A transform under Camera Offset that follows this hand's grip pose. Pose drivers must be
+        /// direct children of Camera Offset: the pose they write is already in tracking space.
+        /// </summary>
+        private Transform CreateGripAnchor()
+        {
+            var origin = GetComponentInParent<XROrigin>(true);
+            var cameraOffset = origin != null ? origin.CameraFloorOffsetObject : null;
+            if (cameraOffset == null)
+            {
+                Debug.LogError($"[PlatformControllerModel] '{name}' is not under an XR Origin with a Camera Offset; " +
+                               "keeping the generic controller model.", this);
+                return null;
+            }
+
+            var hand = isLeftHand ? "{LeftHand}" : "{RightHand}";
+
+            // Built inactive so the driver binds its actions once, after they are assigned.
+            gripAnchor = new GameObject((isLeftHand ? "Left" : "Right") + " Controller Model (Grip)");
+            gripAnchor.SetActive(false);
+            gripAnchor.transform.SetParent(cameraOffset.transform, false);
+
+            var driver = gripAnchor.AddComponent<TrackedPoseDriver>();
+            driver.trackingType = TrackedPoseDriver.TrackingType.RotationAndPosition;
+            driver.positionInput = new InputActionProperty(
+                new InputAction("Grip Position", binding: $"<XRController>{hand}/devicePosition", expectedControlType: "Vector3"));
+            driver.rotationInput = new InputActionProperty(
+                new InputAction("Grip Rotation", binding: $"<XRController>{hand}/deviceRotation", expectedControlType: "Quaternion"));
+            driver.trackingStateInput = new InputActionProperty(
+                new InputAction("Grip Tracking State", binding: $"<XRController>{hand}/trackingState", expectedControlType: "Integer"));
+
+            // OnEnable (which runs right after Awake) shows it.
+            return gripAnchor.transform;
+        }
+
         private void ApplyLocalPose(Transform model, Vector3 position, Quaternion rotation)
         {
             model.SetLocalPositionAndRotation(

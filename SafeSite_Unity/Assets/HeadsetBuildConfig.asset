@@ -28,6 +28,8 @@ MonoBehaviour:
     - UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchProControllerProfile
     - UnityEngine.XR.OpenXR.Features.Interactions.MetaQuestTouchPlusControllerProfile
     - UnityEngine.XR.Hands.OpenXR.HandTracking
+    - UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim
+    - UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile
     - UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature
     disabledFeatureTypeNames:
     - UnityEngine.XR.OpenXR.Features.Meta.ARSessionFeature
@@ -59,6 +61,7 @@ MonoBehaviour:
     - UnityEngine.XR.OpenXR.Features.Interactions.PICO4UltraControllerProfile
     - UnityEngine.XR.OpenXR.Features.Interactions.PICOG3ControllerProfile
     - UnityEngine.XR.Hands.OpenXR.HandTracking
+    - UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile
     - UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature
     disabledFeatureTypeNames:
     - UnityEngine.XR.OpenXR.Features.Meta.ARSessionFeature

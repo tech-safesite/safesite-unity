@@ -654,12 +654,19 @@ namespace Modules.ScenarioLauncher.Editor
             return services;
         }
 
-        /// <summary>Records scenario sessions and sends heartbeats for the dashboard.</summary>
+        /// <summary>Records scenario sessions and sends heartbeats (with the headset's location) for the dashboard.</summary>
         private static void EnsureAnalytics(GameObject services)
         {
-            var type = TypeNamed("Modules.SessionAnalyticsService.Internal.SessionAnalyticsService");
-            if (type != null && services.GetComponent(type) == null)
-                Undo.AddComponent(services, type);
+            foreach (var name in new[]
+                     {
+                         "Modules.SessionAnalyticsService.Internal.SessionAnalyticsService",
+                         "Modules.DeviceLocationService.Internal.DeviceLocationService",
+                     })
+            {
+                var type = TypeNamed(name);
+                if (type != null && services.GetComponent(type) == null)
+                    Undo.AddComponent(services, type);
+            }
         }
 
         // ---- Helpers
