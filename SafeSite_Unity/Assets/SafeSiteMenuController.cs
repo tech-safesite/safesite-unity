@@ -33,7 +33,7 @@ public class SafeSiteMenuController : MonoBehaviour
 
     void Start()
     {
-        FindAnyObjectByType<XRPlayerPositioner>().MovePlayerTo(playerStartingTransform);
+       // FindAnyObjectByType<XRPlayerPositioner>().MovePlayerTo(playerStartingTransform);
         ShowLoadingMenu();
     }
 

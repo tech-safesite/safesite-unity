@@ -152,9 +152,67 @@ namespace SafeSite.Core.Scenarios
         /// <summary>Ends the playing scenario, built-in or downloaded, and returns to the menu.</summary>
         public void UnloadScenario()
         {
+            // A single-mode scenario replaced Bootstrap, so this loader may already be destroyed
+            // (callers still reach it through the stale Instance); go back by reloading Bootstrap.
+            if (loadedSingle)
+            {
+                if (this != null)
+                    StartCoroutine(UnloadSceneSingleRoutine());
+                else
+                    ReloadBootstrap();
+                return;
+            }
+
             if (busy || !HasLoadedScene())
                 return;
             StartCoroutine(UnloadSceneRoutine());
+        }
+
+        // ---- Single-mode loading (scenarios that bring their own rig and replace Bootstrap)
+
+        /// <summary>Set while a scenario loaded with <see cref="LoadScenarioSingle"/> is playing.</summary>
+        private static bool loadedSingle;
+
+        public void LoadScenarioSingle(string sceneAddress)
+        {
+            if (busy)
+                return;
+            StartCoroutine(LoadScenarioSingleRoutine(sceneAddress));
+        }
+
+        private IEnumerator LoadScenarioSingleRoutine(string sceneAddress)
+        {
+            SetBusy(true);
+            ScreenFadeController.Instance.FadeToBlack(1);
+            yield return new WaitForSeconds(1.1f);
+
+            loadedSingle = true;
+            var load = Addressables.LoadSceneAsync(sceneAddress, LoadSceneMode.Single);
+            yield return load;
+
+            // On success Bootstrap (and this loader) is gone; only a failure gets here.
+            if (load.Status != AsyncOperationStatus.Succeeded)
+            {
+                Debug.Log("Scene Loading Failed");
+                loadedSingle = false;
+                Addressables.Release(load);
+                ScreenFadeController.Instance.FadeOutOfBlack(2);
+                SetBusy(false);
+            }
+        }
+
+        private IEnumerator UnloadSceneSingleRoutine()
+        {
+            if (ScreenFadeController.Instance != null)
+                ScreenFadeController.Instance.FadeToBlack(2);
+            yield return new WaitForSeconds(2);
+            ReloadBootstrap();
+        }
+
+        private static void ReloadBootstrap()
+        {
+            loadedSingle = false;
+            Addressables.LoadSceneAsync("Bootstrap", LoadSceneMode.Single);
         }
 
         public void BackToMenu()

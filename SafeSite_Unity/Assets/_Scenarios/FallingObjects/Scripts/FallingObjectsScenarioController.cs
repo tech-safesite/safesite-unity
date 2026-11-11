@@ -13,6 +13,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 using SafeSite.Core.Scenarios;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using Modules.SessionAnalyticsService.External;
+using Oculus.Interaction;
 
 namespace SafeSite.Scenarios.FallingObjects
 {
@@ -33,7 +34,7 @@ namespace SafeSite.Scenarios.FallingObjects
         private Transform PlayerRig; // Add Auto grabber
 
         [SerializeField]
-        private XROrigin playerXROrigin; // Add Auto grabber
+        private OVRCameraRig playerOVRRig;
 
         [SerializeField]
         private InteractionStateManager interactionStateManager;
@@ -75,6 +76,11 @@ namespace SafeSite.Scenarios.FallingObjects
         private GameObject[] returnTeleportNodes;
 
         private DropOnlySocketInteractor drillSocket;
+        [SerializeField]
+        private SnapInteractable drillSnapPoint;
+
+        [SerializeField]
+        private InteractableUnityEventWrapper socketWrapper;
 
         [Header("Load Drop / Accident")]
 
@@ -111,6 +117,7 @@ namespace SafeSite.Scenarios.FallingObjects
         {
             //  finalTeleportNodeReached.AddListener(returnTeleportNodes[1].GetComponent<TeleportationAnchor>().activated);
             // returnTeleportNodes[1].GetComponent<TeleportationAnchor>().teleporting.AddListener(finalTeleportNodeReached);
+            socketWrapper.WhenSelect.AddListener(DrillStore);
         }
 
         private void OnDisable()
@@ -120,31 +127,33 @@ namespace SafeSite.Scenarios.FallingObjects
 
         private void Awake()
         {
+            // Null on the Meta OVR rig, which has no InteractionStateManager; SetInteractionMode skips it.
             interactionStateManager = FindFirstObjectByType<InteractionStateManager>(
             FindObjectsInactive.Include);
         }
 
         private void OnDestroy()
         {
-            if (drillSocket != null)
-            {
-                drillSocket.selectEntered.RemoveAllListeners();
-            }
+            socketWrapper.WhenSelect.RemoveAllListeners();
+
         }
         private void Start()
         {
-            playerXROrigin = FindAnyObjectByType<XROrigin>();
-            PlayerRig = playerXROrigin.transform;
+            // Works on either rig: the Meta OVR rig if the scene has one, else the serialized PlayerRig.
+            if (playerOVRRig == null)
+                playerOVRRig = FindAnyObjectByType<OVRCameraRig>();
+            if (playerOVRRig != null)
+                PlayerRig = playerOVRRig.transform;
 
             VoiceoverHandler.Instance.SetVoiceOverData(fallingObjectsVoiceoverData);
             SetCurrentScenarioState(currentState);
 
-            drillSocket = FindAnyObjectByType<DropOnlySocketInteractor>();
-            drillSocket.selectEntered.AddListener(DrillStore);
+            //  drillSocket = FindAnyObjectByType<DropOnlySocketInteractor>();
+            //  drillSocket.selectEntered.AddListener(DrillStore);
+          //  drillSnapPoint = FindFirstObjectByType<SnapInteractable>();
+            // Invoke("StartCorrectWayBackAtStart", 10);
 
-           // Invoke("StartCorrectWayBackAtStart", 10);
 
-        
         }
         private void SetCurrentScenarioState(ScenarioState newScenarioState)
         {
@@ -158,10 +167,12 @@ namespace SafeSite.Scenarios.FallingObjects
                     StartIntro();
                     break;
                 case ScenarioState.WrongWay_TeleportToDrill:
-                    StartTeleportToDrill();
+                    StartCoroutine(StartTeleportToDrill());
+                    //StartTeleportToDrill();
                     break;
                 case ScenarioState.WrongWay_PickupDrill:
-                    StartPickUpDrill();
+                    StartCoroutine(StartPickUpDrill());
+                    //StartPickUpDrill();
                     break;
                 case ScenarioState.WrongWay_ReturnWithDrill:
                     StartReturn();
@@ -189,28 +200,31 @@ namespace SafeSite.Scenarios.FallingObjects
         private void StartIntro()
         {
 
-            PlayerRig.SetPositionAndRotation(playerStartingPositionTransform.position, playerStartingPositionTransform.rotation); // 
-            playerXROrigin.MatchOriginUpCameraForward(Vector3.up, playerStartingPositionTransform.forward); // make reuseable helper? 
+          //  PlayerRig.SetPositionAndRotation(playerStartingPositionTransform.position, playerStartingPositionTransform.rotation); // 
 
-            ScreenFadeController.Instance.FadeOutOfBlack(3);
+            ScreenFadeController.Instance.FadeOutOfBlack(3); // REMAKE WITH 
 
             VoiceoverHandler.Instance.PlayVoiceOver("intro", IntroFinished);
 
-            interactionStateManager.SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
+            SetInteractionMode(InteractionStateManager.InteractionMode.UIAndTeleport);
         }
 
-        private void StartTeleportToDrill()
+        private IEnumerator StartTeleportToDrill()
         {
-            VoiceoverHandler.Instance.PlayVoiceOver("first_teleport");
             startingTransformNode.SetActive(true);
             craneController.MoveCraneOnStart();
+            VoiceoverHandler.Instance.PlayVoiceOver("first_teleport");
+            yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+            VoiceoverHandler.Instance.PlayVoiceOver("how_to_teleport");
         }
 
-        private void StartPickUpDrill()
+        private IEnumerator StartPickUpDrill()
         {
-            interactionStateManager.SetMode(InteractionStateManager.InteractionMode.ToolUse);
-
+            SetInteractionMode(InteractionStateManager.InteractionMode.ToolUse);
             VoiceoverHandler.Instance.PlayVoiceOver("grab_drill");
+            yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
+            VoiceoverHandler.Instance.PlayVoiceOver("grab_drill_explanation");
         }
 
         private void StartReturn()
@@ -218,7 +232,7 @@ namespace SafeSite.Scenarios.FallingObjects
             VoiceoverHandler.Instance.PlayVoiceOver("return_way");
             middleAccidentNode.SetActive(true);
             craneController.CraneAccidentMovement();
-            interactionStateManager.SetMode(InteractionStateManager.InteractionMode.UIAndTeleport);
+            SetInteractionMode(InteractionStateManager.InteractionMode.UIAndTeleport);
 
         }
 
@@ -247,29 +261,23 @@ namespace SafeSite.Scenarios.FallingObjects
             VoiceoverHandler.Instance.PlayVoiceOver("post_accident_2");
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
+            VoiceoverHandler.Instance.PlayVoiceOver("one_more_step");
+            yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+
             yield return new WaitForSeconds(postAccidentSettleTime);
 
-            VoiceoverHandler.Instance.PlayVoiceOver("one_more_step");
-
             ScreenFadeController.Instance.EventTransition(StartCorrectWayReset);
-
         }
 
         private void StartCorrectWayReset()
         {
-
-
-
             // Any Cleanup / Hide Debris
             fallingLoadHandler.ResetLoad();
             // Player Move / Fade
             PlayerRig.SetPositionAndRotation(correctWayStartingPosition.position, correctWayStartingPosition.rotation); // 
-            playerXROrigin.MatchOriginUpCameraForward(Vector3.up, correctWayStartingPosition.forward); // make reuseable helper? 
+         //   playerXROrigin.MatchOriginUpCameraForward(Vector3.up, correctWayStartingPosition.forward); // make reuseable helper? 
 
             Camera.main.transform.localPosition = (Vector3.zero);
-
-
-
             StartCoroutine(StartCorrectWayResetRoutine());
         }
 
@@ -332,7 +340,7 @@ namespace SafeSite.Scenarios.FallingObjects
             yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
 
             //FInish
-
+            yield return new WaitForSeconds(10);
             SetCurrentScenarioState(ScenarioState.CorrectWay_SafeToCross);
 
             yield return null;
@@ -382,6 +390,12 @@ namespace SafeSite.Scenarios.FallingObjects
             TrainingScenarioLoader.Instance.UnloadScenario();
         }
 
+        private void SetInteractionMode(InteractionStateManager.InteractionMode mode)
+        {
+            if (interactionStateManager != null)
+                interactionStateManager.SetMode(mode);
+        }
+
         ////////// Public for External Calls / Events
         // Seems bloated....Maybe bring all externally elements in as events and remove any outside wiring...
         public void IntroFinished()
@@ -399,8 +413,9 @@ namespace SafeSite.Scenarios.FallingObjects
             SetCurrentScenarioState(ScenarioState.WrongWay_PickupDrill);
         }
 
-        public void DrillStore(SelectEnterEventArgs args)
+        public void DrillStore()
         {
+            Debug.Log("DrillStore() Being Called");
             SetCurrentScenarioState(ScenarioState.WrongWay_ReturnWithDrill);
         }
 

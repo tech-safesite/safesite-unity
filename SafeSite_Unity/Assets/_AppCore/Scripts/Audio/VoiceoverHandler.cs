@@ -70,5 +70,12 @@ namespace SafeSite.Core.Audio
             onFinsished.Invoke();
         }
 
+        public IEnumerator PlayAndWait(string clipName)
+        {
+            PlayVoiceOver(clipName);
+
+            yield return new WaitUntil(() => !SafeSiteAudioManager.Instance.IsVoiceOverPlayingCurrently);
+        }
+
     }
 }

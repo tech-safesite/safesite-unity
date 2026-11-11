@@ -18,109 +18,121 @@ MonoBehaviour:
       drill and bring it back to me. It\u2019s over in the compound sitting on the
       concrete blocks. Be quick! I\u2019m under a bit of pressure to get this job
       done"
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: f6cde23a39bb70f4386cbc2715a1f479, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: first_teleport
     englishSubtitles: Teleport to the blue spot you see on the ground
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishAudio: {fileID: 8300000, guid: 41035dccfbf9e6b40bc8cff6821f2c85, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: how_to_teleport
+    englishSubtitles: Point the controller at the blue circle. A line should appear.
+      Do you see it? When the line appears press and release the button your index
+      finger is on.
+    englishAudio: {fileID: 8300000, guid: 52fa1f3920af4ed49814afdca7b7c06d, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: second_teleport
     englishSubtitles: Yeah Straight ahead, can you see it?
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishAudio: {fileID: 8300000, guid: 7844c38e6e0185a4196cafb9a413c1c3, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: grab_drill
     englishSubtitles: Now with your free hand, reach out and grab the drill
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishAudio: {fileID: 8300000, guid: 431732599ec940a49952146f673791ae, type: 3}
+    romanianSubtitles: 
+    romanianAudio: {fileID: 0}
+  - id: grab_drill_explanation
+    englishSubtitles: Now with your free hand, reach out and grab the drill
+    englishAudio: {fileID: 8300000, guid: bdba84e7240f5734d80406f62a71344f, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: return_way
     englishSubtitles: Perfect, now turn around and come back the way you came.
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: fb49816420b99134aa8a14d47bdd8820, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: post_accident_1
     englishSubtitles: 'STOP THE LIFT! Stop the lift! '
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: ef677da9d4ec5ba4f9ffae4ebedc29c6, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: post_accident_2
-    englishSubtitles: Are you alright? Don't move!
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishSubtitles: Are you okay? Don't move!
+    englishAudio: {fileID: 8300000, guid: b895c326e48a7d649a6d0ea61fac0da4, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: one_more_step
     englishSubtitles: 'One more step and that would have been the end of you. '
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishAudio: {fileID: 8300000, guid: 64fab5402b2b830448e68e50b2b0dbba, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_almost_crushed
     englishSubtitles: Well that was a lucky one! You were almost crushed!
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishAudio: {fileID: 8300000, guid: 2817acf66f10b564eb583b67f583daef, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_look_around_you
     englishSubtitles: Right. Same Job. Only this time, before you move a foot, have
       a good look around you.
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: 5daef2c0546f6964a9a8dbfe78bcd740, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_exclusion_zone
     englishSubtitles: 'That orange colour on the ground is the exclusion zone. Nothing
       and nobody goes in there while that load is in the air. '
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: 5868bdd90355f4f48b1777dc6f2df8b6, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_banksman_intro
     englishSubtitles: 'See that lad in the white hat? That;s the banksman. He''s
       running that lift. Get hs attention. '
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: 5f940cbb9848bc449a096de18099475c, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_wave_to_banksman
-    englishSubtitles: Give him a wave to get his attention
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishSubtitles: Give him a wave so that he sees you!
+    englishAudio: {fileID: 8300000, guid: 7b085b526d1ed4f439443e05b728adb5, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_stay_where_you_are
     englishSubtitles: 'Stay where you are. I''ve a load coming over. I''ll shout
-      you when it''s safe to cross. '
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+      to you when it''s safe to cross. '
+    englishAudio: {fileID: 8300000, guid: 383e7a562a4885d4e8190ccb94e18356, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_waiting_speech_1
     englishSubtitles: 'I know. Standing here waiting in the last thing you want when
       you''re under pressure and somebody''s looking for that drill. '
-    englishAudio: {fileID: 8300000, guid: 68567c56a9eeb984ebec774b186a81d9, type: 3}
+    englishAudio: {fileID: 8300000, guid: f3b5967de47b1764497644ed32a52ccd, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_waiting_speech_2
     englishSubtitles: But you know what's worse than being waiting a minute? Being
       crushed if that load fails again. You barely escaped it last time.
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishAudio: {fileID: 8300000, guid: fc1786665db223243a6927a8afd39174, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: correct_good_to_cross
-    englishSubtitles: You're good to cross!
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishSubtitles: Okay! You're good to cross now!
+    englishAudio: {fileID: 8300000, guid: 88d370cbbeda5a44d88182b0c7037935, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: end_speech_1
-    englishSubtitles: Good. All that cost is you is thirty seconds!
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishSubtitles: Good. All that cost is you is what? 15? 20 seconds?
+    englishAudio: {fileID: 8300000, guid: 6d485e8a85cb9664f87e1875aada339e, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: end_speech_2
-    englishSubtitles: You need to be more aware of your surroundings at all times
-      on-site.
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishSubtitles: 'You need to be more aware of your surroundings at all times
+      on-site. It only takes a split second for something to go wrong. '
+    englishAudio: {fileID: 8300000, guid: 1a3e921e460284a4aa26426eaef50eb7, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}
   - id: end_speech_3
-    englishSubtitles: 'At any moment, soomething could go wrong, and you don''t want
-      to be on the wrong end of that. '
-    englishAudio: {fileID: 8300000, guid: 9c06b3b2725a4654b8466adc01782d9c, type: 3}
+    englishSubtitles: 'You don''t want to be on the wrong end of that. Everyone thinks
+      it will never happen to them...until it does. '
+    englishAudio: {fileID: 8300000, guid: eb5758cac9cdd5b4788aca376eefe9b3, type: 3}
     romanianSubtitles: 
     romanianAudio: {fileID: 0}

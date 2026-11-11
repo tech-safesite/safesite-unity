@@ -25,7 +25,7 @@ namespace SafeSite.Core.Utilities
         {
             if(target == null)
             {
-                target = FindAnyObjectByType<XROrigin>().transform;
+               // target = FindAnyObjectByType<XROrigin>().transform;
             }
         }
 
